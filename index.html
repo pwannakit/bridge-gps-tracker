@@ -6,30 +6,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Bridge Foundation Tracker</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        /* บังคับความสูงแผนที่เพื่อให้แสดงผลบน iPhone ได้ชัวร์ */
-        #map { 
-            height: 350px; 
-            width: 100%;
-            z-index: 10;
-            border-radius: 8px;
-        }
-        /* ลำดับการซ้อนทับของ Modal ต้องอยู่บนสุด */
-        #formModal, #photoModal {
-            z-index: 9999;
-        }
-        /* ปรับแต่ง Scrollbar ให้ดูสะอาดตา */
-        #foundationList::-webkit-scrollbar {
-            width: 4px;
-        }
-        #foundationList::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
+        #map { height: 350px; width: 100%; z-index: 10; border-radius: 8px; }
+        #formModal, #photoModal, #loadingModal { z-index: 9999; }
+        #foundationList::-webkit-scrollbar { width: 4px; }
+        #foundationList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-slate-100 p-2 md:p-4 font-sans">
@@ -37,13 +20,13 @@
     <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
         <div class="bg-blue-700 text-white p-5 text-center shadow-md">
             <h1 class="text-xl font-bold tracking-tight">ระบบพิกัดฐานรากสะพาน</h1>
-            <p class="text-xs text-blue-100 mt-1 opacity-80">Bridge Construction GPS Tracker</p>
+            <p class="text-xs text-blue-100 mt-1 opacity-80">Cloud Sync Enabled</p>
         </div>
         
         <div class="p-4">
             <div class="mb-4">
                 <button id="trackLocationBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
                     เริ่มติดตามตำแหน่ง GPS
                 </button>
             </div>
@@ -52,7 +35,7 @@
                 <div class="grid grid-cols-2 gap-2 text-xs">
                     <div class="text-slate-500 font-medium italic">ตำแหน่งปัจจุบัน:</div>
                     <div id="currentCoords" class="font-mono text-slate-800 text-right font-bold">-</div>
-                    <div class="text-slate-500 font-medium italic">ความแม่นยำ (Accuracy):</div>
+                    <div class="text-slate-500 font-medium italic">ความแม่นยำ:</div>
                     <div id="accVal" class="font-mono text-blue-600 text-right font-bold">-</div>
                 </div>
             </div>
@@ -66,23 +49,15 @@
             </div>
 
             <div class="flex justify-between items-center mb-3 mt-4">
-                <h2 class="text-lg font-bold text-slate-800 flex items-center">
-                    <svg class="w-5 h-5 mr-1 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                    จุดที่บันทึกไว้
-                </h2>
-                <div class="flex gap-2">
-                    <button id="exportBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 p-2 rounded-lg transition-colors" title="ดาวน์โหลดไฟล์สำรอง">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    </button>
-                    <button id="openAddModalBtn" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg flex items-center shadow-md active:scale-95 transition-all">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        เพิ่มจุด
-                    </button>
-                </div>
+                <h2 class="text-lg font-bold text-slate-800 flex items-center">จุดที่บันทึกไว้</h2>
+                <button id="openAddModalBtn" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg flex items-center shadow-md active:scale-95 transition-all">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    เพิ่มจุด
+                </button>
             </div>
 
             <div id="foundationList" class="space-y-3 max-h-[400px] overflow-y-auto pb-6">
-                <p class="text-center text-slate-400 py-10 text-sm">ยังไม่มีข้อมูล... กด "เพิ่มจุด" เพื่อเริ่มบันทึก</p>
+                <p class="text-center text-slate-400 py-10 text-sm">ยังไม่มีข้อมูล...</p>
             </div>
         </div>
     </div>
@@ -94,31 +69,22 @@
             
             <div class="mb-4">
                 <label class="block text-sm font-bold text-slate-700 mb-1">ชื่อฐานราก (เช่น Pier 1)</label>
-                <input type="text" id="formName" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-lg" placeholder="พิมพ์ชื่อจุดที่นี่...">
+                <input type="text" id="formName" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg">
             </div>
 
             <div class="mb-4">
                 <div class="flex justify-between mb-1 items-end">
                     <label class="block text-sm font-bold text-slate-700">ค่าพิกัด GPS</label>
-                    <button id="useCurrentLocationBtn" type="button" class="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-200 transition-colors flex items-center">
-                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
-                        ดึงตำแหน่งปัจจุบัน
-                    </button>
+                    <button id="useCurrentLocationBtn" type="button" class="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-200 flex items-center">ดึงตำแหน่งปัจจุบัน</button>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <span class="text-[10px] text-slate-400 uppercase font-bold">Latitude</span>
-                        <input type="number" id="formLat" step="any" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono bg-slate-50">
-                    </div>
-                    <div>
-                        <span class="text-[10px] text-slate-400 uppercase font-bold">Longitude</span>
-                        <input type="number" id="formLng" step="any" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono bg-slate-50">
-                    </div>
+                    <input type="number" id="formLat" step="any" placeholder="Lat" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono bg-slate-50">
+                    <input type="number" id="formLng" step="any" placeholder="Lng" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono bg-slate-50">
                 </div>
             </div>
 
             <div class="mb-5">
-                <label class="block text-sm font-bold text-slate-700 mb-1">รูปถ่ายหน้างาน (อ้างอิงตำแหน่ง)</label>
+                <label class="block text-sm font-bold text-slate-700 mb-1">รูปถ่ายหน้างาน</label>
                 <input type="file" id="formImage" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                 <div class="mt-3 relative hidden" id="imagePreviewContainer">
                     <img id="imagePreview" src="" class="max-h-40 rounded-xl border border-slate-200 w-full object-cover shadow-sm">
@@ -128,184 +94,113 @@
             </div>
 
             <div class="flex gap-3 mt-6">
-                <button id="cancelBtn" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition-colors">ยกเลิก</button>
-                <button id="saveBtn" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all active:scale-95">บันทึกข้อมูล</button>
+                <button id="cancelBtn" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200">ยกเลิก</button>
+                <button id="saveBtn" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200">บันทึก & ซิงค์</button>
             </div>
         </div>
     </div>
 
-    <div id="photoModal" class="fixed inset-0 bg-slate-950/95 flex items-center justify-center p-2 hidden" onclick="this.classList.add('hidden')">
-        <img id="fullPhotoView" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl">
-        <div class="absolute top-6 right-6 text-white text-3xl font-light bg-slate-800/50 w-12 h-12 flex items-center justify-center rounded-full border border-slate-700">×</div>
+    <div id="loadingModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 hidden">
+        <svg class="w-12 h-12 text-white animate-spin mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        <p class="text-white font-bold text-lg">กำลังอัปโหลดขึ้นระบบ Cloud...</p>
+        <p class="text-slate-300 text-sm mt-2">อาจใช้เวลาสักครู่หากมีรูปภาพขนาดใหญ่</p>
     </div>
+
+    <div id="photoModal" class="fixed inset-0 bg-slate-950/95 flex items-center justify-center p-2 hidden" onclick="this.classList.add('hidden')"><img id="fullPhotoView" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // =======================================================================
+        // นำ URL ที่ได้จากขั้นตอนที่ 1 มาวางแทนข้อความในเครื่องหมายคำพูดด้านล่างนี้เลยครับ
+        // =======================================================================
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUrf7tBLEiqkkbTodqCXKWYOqsutzd1bWt7jRdp1gFoXeukqiSPn9nzINrHi8C9qVj/exec"; 
+        // =======================================================================
+
         document.addEventListener('DOMContentLoaded', () => {
-            // --- 1. การจัดการข้อมูล (State) ---
             let foundations = JSON.parse(localStorage.getItem('bridge_foundations')) || [];
-            let currentPosition = null;
-            let watchId = null;
-            let activeTargetId = null;
-            
-            // --- 2. การตั้งค่าแผนที่ (Map Setup) ---
-            // เริ่มต้นที่กรุงเทพฯ ถ้ายังไม่มีพิกัด
+            let currentPosition = null; let watchId = null; let activeTargetId = null;
             let map = L.map('map').setView([13.7563, 100.5018], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-                maxZoom: 19,
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
-            
-            let userMarker, accuracyCircle, routingLine;
-            let markersLayer = L.layerGroup().addTo(map);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+            let userMarker, accuracyCircle, routingLine, markersLayer = L.layerGroup().addTo(map);
+            const blueIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+            const redIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
 
-            // ไอคอนสำหรับหมุด
-            const blueIcon = L.icon({ 
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', 
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', 
-                iconSize: [25, 41], iconAnchor: [12, 41] 
-            });
-            const redIcon = L.icon({ 
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', 
-                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', 
-                iconSize: [25, 41], iconAnchor: [12, 41] 
-            });
+            renderList(); renderMapMarkers();
 
-            // เริ่มต้นแสดงรายการและหมุด
-            renderList();
-            renderMapMarkers();
-
-            // --- 3. ระบบ GPS Tracking ---
             const trackBtn = document.getElementById('trackLocationBtn');
             trackBtn.addEventListener('click', () => {
-                if (!navigator.geolocation) return alert('ขออภัย อุปกรณ์ของคุณไม่รองรับการระบุตำแหน่ง GPS');
-                
+                if (!navigator.geolocation) return alert('ไม่รองรับ GPS');
                 if (watchId) {
-                    // หยุดติดตาม
-                    navigator.geolocation.clearWatch(watchId);
-                    watchId = null;
-                    trackBtn.innerHTML = '<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg> เริ่มติดตามตำแหน่ง GPS';
-                    trackBtn.classList.replace('bg-green-600', 'bg-blue-600');
+                    navigator.geolocation.clearWatch(watchId); watchId = null;
+                    trackBtn.innerHTML = 'เริ่มติดตามตำแหน่ง GPS'; trackBtn.classList.replace('bg-green-600', 'bg-blue-600');
                     document.getElementById('locationData').classList.add('hidden');
                 } else {
-                    // เริ่มติดตาม
-                    trackBtn.innerHTML = '<svg class="w-6 h-6 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> กำลังระบุตำแหน่ง...';
-                    trackBtn.classList.replace('bg-blue-600', 'bg-green-600');
+                    trackBtn.innerHTML = 'กำลังระบุตำแหน่ง...'; trackBtn.classList.replace('bg-blue-600', 'bg-green-600');
                     document.getElementById('locationData').classList.remove('hidden');
-                    
                     watchId = navigator.geolocation.watchPosition(
                         (pos) => {
-                            const lat = pos.coords.latitude;
-                            const lng = pos.coords.longitude;
-                            currentPosition = L.latLng(lat, lng);
-                            
-                            trackBtn.innerHTML = '<svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> หยุดติดตาม GPS';
-                            document.getElementById('currentCoords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-                            document.getElementById('accVal').textContent = `±${pos.coords.accuracy.toFixed(1)} เมตร`;
-
-                            // อัปเดตสัญลักษณ์ผู้ใช้บนแผนที่
-                            if (userMarker) {
-                                userMarker.setLatLng(currentPosition);
-                                accuracyCircle.setLatLng(currentPosition).setRadius(pos.coords.accuracy);
-                            } else {
-                                userMarker = L.marker(currentPosition, {
-                                    icon: L.divIcon({ className: 'bg-blue-600 border-2 border-white rounded-full w-4 h-4 shadow-lg', iconSize: [16, 16] })
-                                }).addTo(map);
-                                accuracyCircle = L.circle(currentPosition, { radius: pos.coords.accuracy, color: '#3b82f6', fillOpacity: 0.15, weight: 1 }).addTo(map);
-                                map.setView(currentPosition, 18);
-                            }
+                            currentPosition = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                            trackBtn.innerHTML = 'หยุดติดตาม GPS';
+                            document.getElementById('currentCoords').textContent = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
+                            document.getElementById('accVal').textContent = `±${pos.coords.accuracy.toFixed(1)} m`;
+                            if (userMarker) { userMarker.setLatLng(currentPosition); accuracyCircle.setLatLng(currentPosition).setRadius(pos.coords.accuracy); }
+                            else { userMarker = L.marker(currentPosition).addTo(map); accuracyCircle = L.circle(currentPosition, { radius: pos.coords.accuracy }).addTo(map); map.setView(currentPosition, 18); }
                             updateNavigation();
-                        },
-                        (err) => {
-                            alert('ไม่สามารถดึงข้อมูลพิกัดได้: ' + err.message);
-                            trackBtn.click(); // ปิดการทำงานถ้าเกิด Error
-                        },
-                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                        }, (err) => { alert('หาพิกัดไม่ได้'); trackBtn.click(); }, { enableHighAccuracy: true }
                     );
                 }
             });
 
-            // --- 4. การจัดการแผนที่และนำทาง ---
             function renderMapMarkers() {
-                markersLayer.clearLayers();
-                let bounds = [];
+                markersLayer.clearLayers(); let bounds = [];
                 foundations.forEach(f => {
-                    const m = L.marker([f.lat, f.lng], { icon: f.id === activeTargetId ? redIcon : blueIcon })
-                     .bindPopup(`<div class="p-1"><b class="text-slate-800">${f.name}</b></div>`)
-                     .addTo(markersLayer);
+                    L.marker([f.lat, f.lng], { icon: f.id === activeTargetId ? redIcon : blueIcon }).bindPopup(`<b>${f.name}</b>`).addTo(markersLayer);
                     bounds.push([f.lat, f.lng]);
                 });
-                // ปรับโฟกัสแผนที่ให้เห็นหมุดทั้งหมด (ถ้าไม่ได้ติดตามตำแหน่งอยู่)
                 if (bounds.length > 0 && !currentPosition) map.fitBounds(bounds, { padding: [50, 50] });
             }
 
-            window.setTarget = function(id) {
-                activeTargetId = id;
-                const target = foundations.find(f => f.id === id);
-                document.getElementById('navStatus').classList.remove('hidden');
-                document.getElementById('navTargetName').textContent = target.name;
-                renderMapMarkers();
-                updateNavigation();
-                window.scrollTo({ top: 0, behavior: 'smooth' }); // เลื่อนขึ้นไปดูแผนที่
+            window.setTarget = (id) => {
+                activeTargetId = id; document.getElementById('navStatus').classList.remove('hidden');
+                document.getElementById('navTargetName').textContent = foundations.find(f => f.id === id).name;
+                renderMapMarkers(); updateNavigation(); window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
             document.getElementById('stopNavBtn').addEventListener('click', () => {
-                activeTargetId = null;
-                document.getElementById('navStatus').classList.add('hidden');
-                if (routingLine) map.removeLayer(routingLine);
-                renderMapMarkers();
-                renderList();
+                activeTargetId = null; document.getElementById('navStatus').classList.add('hidden');
+                if (routingLine) map.removeLayer(routingLine); renderMapMarkers(); renderList();
             });
 
             function updateNavigation() {
                 if (!currentPosition || !activeTargetId) return;
                 const target = foundations.find(f => f.id === activeTargetId);
-                const targetPos = L.latLng(target.lat, target.lng);
-                const distance = currentPosition.distanceTo(targetPos);
-                
-                document.getElementById('navDistance').textContent = distance.toFixed(1) + ' เมตร';
-                
-                // วาดเส้นนำทาง
+                const dist = currentPosition.distanceTo(L.latLng(target.lat, target.lng));
+                document.getElementById('navDistance').textContent = dist.toFixed(1) + ' เมตร';
                 if (routingLine) map.removeLayer(routingLine);
-                routingLine = L.polyline([currentPosition, targetPos], {color: '#ef4444', weight: 4, dashArray: '8, 12'}).addTo(map);
-                
-                renderList(); // อัปเดตระยะทางในรายการด้วย
+                routingLine = L.polyline([currentPosition, L.latLng(target.lat, target.lng)], {color: 'red', weight: 4}).addTo(map);
+                renderList();
             }
 
-            // --- 5. การจัดการรายการ (List View) ---
             function renderList() {
                 const list = document.getElementById('foundationList');
-                if (foundations.length === 0) {
-                    list.innerHTML = '<p class="text-center text-slate-400 py-10 text-sm italic">ยังไม่มีข้อมูลจุดฐานราก...</p>';
-                    return;
-                }
-
+                if (foundations.length === 0) { list.innerHTML = '<p class="text-center text-slate-400 py-10">ยังไม่มีข้อมูล...</p>'; return; }
                 list.innerHTML = '';
-                
-                // จัดเรียงตามระยะทางถ้ามีพิกัดปัจจุบัน
                 let sorted = [...foundations];
-                if (currentPosition) {
-                    sorted.sort((a, b) => currentPosition.distanceTo(L.latLng(a.lat, a.lng)) - currentPosition.distanceTo(L.latLng(b.lat, b.lng)));
-                }
-
+                if (currentPosition) sorted.sort((a, b) => currentPosition.distanceTo(L.latLng(a.lat, a.lng)) - currentPosition.distanceTo(L.latLng(b.lat, b.lng)));
+                
                 sorted.forEach(f => {
                     const dist = currentPosition ? currentPosition.distanceTo(L.latLng(f.lat, f.lng)) : null;
                     const item = document.createElement('div');
-                    item.className = `p-3 border rounded-2xl shadow-sm flex items-center transition-all ${f.id === activeTargetId ? 'bg-red-50 border-red-200 ring-2 ring-red-100' : 'bg-white border-slate-100'}`;
+                    item.className = `p-3 border rounded-2xl flex items-center ${f.id === activeTargetId ? 'bg-red-50 border-red-200' : 'bg-white'}`;
                     item.innerHTML = `
-                        <div class="relative">
-                            ${f.image ? `<img src="${f.image}" class="w-16 h-16 object-cover rounded-xl border border-slate-200 cursor-pointer shadow-sm active:scale-90 transition-transform" onclick="window.showBigPhoto('${f.image}')">` : `<div class="w-16 h-16 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex items-center justify-center text-[10px] text-slate-400 text-center px-1 font-medium">ไม่มีรูป</div>`}
-                        </div>
+                        ${f.image ? `<img src="${f.image}" class="w-16 h-16 object-cover rounded-xl cursor-pointer" onclick="document.getElementById('fullPhotoView').src='${f.image}'; document.getElementById('photoModal').classList.remove('hidden');">` : `<div class="w-16 h-16 bg-slate-50 flex items-center justify-center text-xs text-slate-400">ไม่มีรูป</div>`}
                         <div class="flex-1 ml-4 overflow-hidden">
-                            <h4 class="font-black text-slate-800 text-sm truncate uppercase tracking-tight">${f.name}</h4>
-                            <div class="flex items-center mt-0.5">
-                                <p class="text-[10px] text-slate-400 font-mono tracking-tighter">${f.lat.toFixed(6)}, ${f.lng.toFixed(6)}</p>
-                                ${dist !== null ? `<span class="ml-auto text-xs font-black text-red-600 bg-red-100 px-2 py-0.5 rounded-full">${dist.toFixed(1)}m</span>` : ''}
-                            </div>
+                            <h4 class="font-black text-slate-800 text-sm truncate uppercase">${f.name}</h4>
+                            <p class="text-[10px] text-slate-400 font-mono">${f.lat.toFixed(6)}, ${f.lng.toFixed(6)}</p>
                             <div class="flex gap-2 mt-2">
-                                <button onclick="window.setTarget('${f.id}')" class="bg-blue-50 text-blue-700 px-3 py-1.5 text-[11px] rounded-lg font-black uppercase hover:bg-blue-100 active:scale-95 transition-all">นำทาง</button>
-                                <button onclick="window.editData('${f.id}')" class="bg-slate-50 text-slate-600 px-3 py-1.5 text-[11px] rounded-lg font-black uppercase hover:bg-slate-100 active:scale-95 transition-all">แก้ไข</button>
-                                <button onclick="window.deleteData('${f.id}')" class="bg-red-50 text-red-500 px-3 py-1.5 text-[11px] rounded-lg font-black uppercase hover:bg-red-100 ml-auto active:scale-95 transition-all">ลบ</button>
+                                <button onclick="window.setTarget('${f.id}')" class="bg-blue-50 text-blue-700 px-3 py-1.5 text-[11px] rounded-lg font-black uppercase">นำทาง</button>
+                                <button onclick="window.editData('${f.id}')" class="bg-slate-50 text-slate-600 px-3 py-1.5 text-[11px] rounded-lg font-black uppercase">แก้ไข</button>
+                                <button onclick="window.deleteData('${f.id}')" class="bg-red-50 text-red-500 px-3 py-1.5 text-[11px] rounded-lg font-black uppercase ml-auto">ลบ</button>
                             </div>
                         </div>
                     `;
@@ -313,79 +208,43 @@
                 });
             }
 
-            window.showBigPhoto = (src) => {
-                document.getElementById('fullPhotoView').src = src;
-                document.getElementById('photoModal').classList.remove('hidden');
-            };
-
-            // --- 6. ระบบฟอร์ม เพิ่ม/แก้ไข (Modal Management) ---
             const modal = document.getElementById('formModal');
             document.getElementById('openAddModalBtn').addEventListener('click', () => {
-                document.getElementById('modalTitle').textContent = 'บันทึกพิกัดใหม่';
-                document.getElementById('formId').value = '';
-                document.getElementById('formName').value = '';
-                document.getElementById('formImage').value = '';
-                document.getElementById('imagePreviewContainer').classList.add('hidden');
+                document.getElementById('formId').value = ''; document.getElementById('formName').value = '';
+                document.getElementById('formImage').value = ''; document.getElementById('imagePreviewContainer').classList.add('hidden');
                 document.getElementById('formImageDataUrl').value = '';
-                
-                // พยายามดึงพิกัดล่าสุดมาใส่ให้ก่อนเลย
-                if (currentPosition) {
-                    document.getElementById('formLat').value = currentPosition.lat.toFixed(6);
-                    document.getElementById('formLng').value = currentPosition.lng.toFixed(6);
-                } else {
-                    document.getElementById('formLat').value = '';
-                    document.getElementById('formLng').value = '';
-                }
+                if (currentPosition) { document.getElementById('formLat').value = currentPosition.lat.toFixed(6); document.getElementById('formLng').value = currentPosition.lng.toFixed(6); }
                 modal.classList.remove('hidden');
-                document.getElementById('formName').focus();
             });
 
-            // ปุ่มดึงพิกัดปัจจุบันภายในฟอร์ม
             document.getElementById('useCurrentLocationBtn').addEventListener('click', function() {
-                if (currentPosition) {
-                    document.getElementById('formLat').value = currentPosition.lat.toFixed(6);
-                    document.getElementById('formLng').value = currentPosition.lng.toFixed(6);
-                } else {
-                    const btn = this;
-                    btn.innerHTML = 'กำลังค้นหา...';
-                    btn.disabled = true;
-                    navigator.geolocation.getCurrentPosition(
-                        (pos) => {
-                            document.getElementById('formLat').value = pos.coords.latitude.toFixed(6);
-                            document.getElementById('formLng').value = pos.coords.longitude.toFixed(6);
-                            btn.innerHTML = 'ดึงตำแหน่งปัจจุบัน';
-                            btn.disabled = false;
-                        },
-                        (err) => {
-                            alert('ไม่สามารถหาพิกัดได้ กรุณาตรวจสอบการอนุญาต GPS');
-                            btn.innerHTML = 'ดึงตำแหน่งปัจจุบัน';
-                            btn.disabled = false;
-                        },
-                        { enableHighAccuracy: true }
-                    );
+                if(currentPosition) { document.getElementById('formLat').value = currentPosition.lat.toFixed(6); document.getElementById('formLng').value = currentPosition.lng.toFixed(6); }
+                else {
+                    this.innerHTML = 'กำลังค้นหา...';
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        document.getElementById('formLat').value = pos.coords.latitude.toFixed(6);
+                        document.getElementById('formLng').value = pos.coords.longitude.toFixed(6);
+                        this.innerHTML = 'ดึงตำแหน่งปัจจุบัน';
+                    }, (err) => { alert('หาพิกัดไม่ได้'); this.innerHTML = 'ดึงตำแหน่งปัจจุบัน'; }, { enableHighAccuracy: true });
                 }
             });
 
             document.getElementById('cancelBtn').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('removeImgBtn').addEventListener('click', () => {
+                document.getElementById('formImage').value = ''; document.getElementById('formImageDataUrl').value = ''; document.getElementById('imagePreviewContainer').classList.add('hidden');
+            });
 
-            // จัดการไฟล์ภาพและบีบอัด
             document.getElementById('formImage').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                
+                const file = e.target.files[0]; if (!file) return;
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_SIZE = 500; // บีบอัดให้กว้างสุด 500px เพื่อประหยัด LocalStorage
-                        let w = img.width, h = img.height;
-                        if (w > h) { if (w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } }
-                        else { if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; } }
-                        canvas.width = w; canvas.height = h;
-                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.6); // คุณภาพ 60%
-                        
+                        let w = img.width, h = img.height; const MAX = 600;
+                        if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                        canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
                         document.getElementById('formImageDataUrl').value = dataUrl;
                         document.getElementById('imagePreview').src = dataUrl;
                         document.getElementById('imagePreviewContainer').classList.remove('hidden');
@@ -395,79 +254,69 @@
                 reader.readAsDataURL(file);
             });
 
-            document.getElementById('removeImgBtn').addEventListener('click', () => {
-                document.getElementById('formImage').value = '';
-                document.getElementById('formImageDataUrl').value = '';
-                document.getElementById('imagePreviewContainer').classList.add('hidden');
-            });
-
-            // บันทึกข้อมูล
-            document.getElementById('saveBtn').addEventListener('click', () => {
+            // ปรับปรุงปุ่มบันทึกให้เชื่อมกับ Cloud
+            document.getElementById('saveBtn').addEventListener('click', async () => {
                 const id = document.getElementById('formId').value || Date.now().toString();
-                const name = document.getElementById('formName').value.trim();
-                const lat = parseFloat(document.getElementById('formLat').value);
-                const lng = parseFloat(document.getElementById('formLng').value);
+                const data = {
+                    id: id,
+                    name: document.getElementById('formName').value.trim(),
+                    lat: parseFloat(document.getElementById('formLat').value),
+                    lng: parseFloat(document.getElementById('formLng').value),
+                    image: document.getElementById('formImageDataUrl').value
+                };
 
-                if (!name || isNaN(lat) || isNaN(lng)) return alert('กรุณากรอกชื่อและค่าพิกัดให้ถูกต้อง');
-                
-                const data = { id, name, lat, lng, image: document.getElementById('formImageDataUrl').value };
+                if (!data.name || isNaN(data.lat)) return alert('กรอกข้อมูลไม่ครบ');
+
+                // 1. บันทึกลงเครื่องก่อน (กันเน็ตหลุด)
                 const idx = foundations.findIndex(f => f.id === id);
+                if (idx >= 0) foundations[idx] = data; else foundations.push(data);
+                localStorage.setItem('bridge_foundations', JSON.stringify(foundations));
                 
-                if (idx >= 0) foundations[idx] = data; 
-                else foundations.push(data);
+                modal.classList.add('hidden');
+                renderMapMarkers(); renderList();
+
+                // 2. ส่งข้อมูลขึ้น Cloud (Google Sheets / Drive)
+                if (GOOGLE_SCRIPT_URL === "วาง_URL_ของ_WEB_APP_ตรงนี้") {
+                    alert("คุณยังไม่ได้ใส่ URL ของ Google Apps Script ในโค้ด ข้อมูลถูกเซฟลงมือถืออย่างเดียวครับ");
+                    return;
+                }
+
+                document.getElementById('loadingModal').classList.remove('hidden');
                 
                 try {
-                    localStorage.setItem('bridge_foundations', JSON.stringify(foundations));
-                    modal.classList.add('hidden');
-                    renderMapMarkers(); 
-                    renderList();
-                    if (activeTargetId === id) updateNavigation();
-                } catch(e) {
-                    alert('ไม่สามารถบันทึกได้: หน่วยความจำมือถือเต็ม (LocalStorage Full) กรุณาสำรองข้อมูลและลบภาพเก่าออกบ้าง');
+                    // ใช้ mode: 'no-cors' ป้องกันปัญหา Cross-Origin จากโทรศัพท์
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors', 
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    document.getElementById('loadingModal').classList.add('hidden');
+                    alert('ซิงค์ข้อมูลขึ้น Google Sheets สำเร็จ!');
+                } catch (error) {
+                    document.getElementById('loadingModal').classList.add('hidden');
+                    alert('ส่งขึ้น Cloud ไม่สำเร็จ (เน็ตอาจจะหลุด) แต่ข้อมูลยังเซฟอยู่ในเครื่องครับ!');
                 }
             });
 
             window.editData = (id) => {
                 const t = foundations.find(f => f.id === id);
-                document.getElementById('modalTitle').textContent = 'แก้ไขพิกัด ' + t.name;
-                document.getElementById('formId').value = t.id;
-                document.getElementById('formName').value = t.name;
-                document.getElementById('formLat').value = t.lat;
-                document.getElementById('formLng').value = t.lng;
+                document.getElementById('formId').value = t.id; document.getElementById('formName').value = t.name;
+                document.getElementById('formLat').value = t.lat; document.getElementById('formLng').value = t.lng;
                 document.getElementById('formImageDataUrl').value = t.image || '';
-                
-                if (t.image) {
-                    document.getElementById('imagePreview').src = t.image;
-                    document.getElementById('imagePreviewContainer').classList.remove('hidden');
-                } else {
-                    document.getElementById('imagePreviewContainer').classList.add('hidden');
-                }
-                document.getElementById('formImage').value = '';
+                if (t.image) { document.getElementById('imagePreview').src = t.image; document.getElementById('imagePreviewContainer').classList.remove('hidden'); }
                 modal.classList.remove('hidden');
             };
 
             window.deleteData = (id) => {
-                if (confirm('ยืนยันการลบจุดฐานรากนี้? ข้อมูลจะหายถาวร')) {
+                if (confirm('ลบจุดนี้? (ถ้าส่งขึ้น Sheet ไปแล้ว จะต้องตามไปลบใน Sheet ด้วยตัวเองนะครับ)')) {
                     foundations = foundations.filter(f => f.id !== id);
                     localStorage.setItem('bridge_foundations', JSON.stringify(foundations));
-                    if (activeTargetId === id) document.getElementById('stopNavBtn').click();
-                    renderMapMarkers(); 
-                    renderList();
+                    if(activeTargetId === id) document.getElementById('stopNavBtn').click();
+                    renderMapMarkers(); renderList();
                 }
             };
-
-            // --- 7. การสำรองข้อมูล (Export Backup) ---
-            document.getElementById('exportBtn').addEventListener('click', () => {
-                if (foundations.length === 0) return alert('ไม่มีข้อมูลให้สำรอง');
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(foundations));
-                const a = document.createElement('a');
-                const timestamp = new Date().toLocaleDateString().replace(/\//g, '-');
-                a.setAttribute("href", dataStr);
-                a.setAttribute("download", `Bridge_GPS_Data_${timestamp}.json`);
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            });
         });
     </script>
 </body>
