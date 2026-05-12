@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Bridge Foundation Tracker v1.2</title>
+    <title>Bridge Foundation Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -25,10 +25,13 @@
 </head>
 <body class="bg-slate-100 p-2 md:p-4 font-sans">
 
-    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-        <div class="bg-blue-700 text-white p-5 text-center shadow-md">
-            <h1 class="text-xl font-bold tracking-tight">ระบบพิกัดฐานรากสะพาน v1.2</h1>
+    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200 relative">
+        <div class="bg-blue-700 text-white p-5 text-center shadow-md relative">
+            <h1 class="text-xl font-bold tracking-tight">ระบบพิกัดฐานรากสะพาน</h1>
             <p class="text-xs text-blue-100 mt-1 opacity-80">Cloud Sync Enabled</p>
+            <div class="absolute top-3 right-4 text-[10px] font-mono text-blue-200 bg-blue-800/50 px-2 py-0.5 rounded-full border border-blue-600/50">
+                v2.0
+            </div>
         </div>
         
         <div class="p-4">
@@ -119,7 +122,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // =======================================================================
-        // URL ของ Web App จาก Google Apps Script (ใส่ข้อมูลเรียบร้อย)
+        // URL ของ Web App จาก Google Apps Script
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUrf7tBLEiqkkbTodqCXKWYOqsutzd1bWt7jRdp1gFoXeukqiSPn9nzINrHi8C9qVj/exec"; 
         // =======================================================================
 
@@ -301,9 +304,7 @@
                 modal.classList.add('hidden');
                 renderMapMarkers(); renderList();
 
-                if (GOOGLE_SCRIPT_URL === "วาง_URL_ของ_WEB_APP_ตรงนี้") {
-                    return; // ป้องกันเผื่อมีการแก้ไขโค้ดกลับไปเป็นค่าตั้งต้น
-                }
+                if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("วาง_URL")) return;
 
                 document.getElementById('loadingModal').classList.remove('hidden');
                 
