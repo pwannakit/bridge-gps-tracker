@@ -29,7 +29,7 @@
             <h1 class="text-xl font-bold tracking-tight">ระบบพิกัดฐานรากสะพาน</h1>
             <p class="text-xs text-blue-100 mt-1 opacity-80">Cloud Sync Enabled</p>
             <div class="absolute top-3 right-4 text-[10px] font-mono text-blue-200 bg-blue-800/50 px-2 py-0.5 rounded-full border border-blue-600/50">
-                v2.5
+                v2.6
             </div>
         </div>
         
@@ -100,10 +100,10 @@
                 <button onclick="document.getElementById('whereAmIModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-3xl">✕</button>
             </div>
             
-            <div id="closestResults" class="space-y-4">
+            <div id="closestResults" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
                 </div>
             
-            <button onclick="document.getElementById('whereAmIModal').classList.add('hidden')" class="w-full mt-8 py-5 bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors rounded-2xl font-black text-lg flex justify-center items-center">
+            <button onclick="document.getElementById('whereAmIModal').classList.add('hidden')" class="w-full mt-6 py-4 bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors rounded-2xl font-black text-lg flex justify-center items-center">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 ย้อนกลับ
             </button>
@@ -179,7 +179,6 @@
                     }
                 } catch (error) {
                     console.error("Cloud fetch error:", error);
-                    // เงียบไว้ให้ทำงานจาก LocalStorage แทน
                 }
 
                 loadModal.classList.add('hidden');
@@ -196,21 +195,27 @@
                 container.innerHTML = '';
                 results.forEach((res, index) => {
                     const card = document.createElement('div');
-                    card.className = `p-4 border-2 rounded-2xl flex items-center bg-slate-50 transition-all active:scale-95 ${index === 0 ? 'border-orange-400 bg-orange-50' : 'border-slate-100'}`;
                     
-                    // ปรับรูปภาพให้กดแล้วเรียก PhotoModal ขึ้นมาแสดงได้ทันที
+                    // ปรับโครงสร้างใหม่ เป็นแนวตั้ง (flex-col)
+                    card.className = `p-4 border-2 rounded-2xl flex flex-col bg-slate-50 transition-all ${index === 0 ? 'border-orange-400 bg-orange-50' : 'border-slate-100'}`;
+                    
                     card.innerHTML = `
-                        <div class="bg-blue-700 text-white w-10 h-10 rounded-full flex items-center justify-center font-black text-lg mr-3 flex-shrink-0">${index + 1}</div>
-                        <div class="flex-shrink-0">
-                            ${res.image ? `<img src="${res.image}" class="w-16 h-16 object-cover rounded-xl border border-slate-200 cursor-pointer shadow-sm active:scale-90 transition-transform" onclick="document.getElementById('fullPhotoView').src='${res.image}'; document.getElementById('photoModal').classList.remove('hidden');">` : `<div class="w-16 h-16 bg-slate-200 rounded-xl flex items-center justify-center text-xs font-bold text-slate-500">NO IMG</div>`}
+                        <div class="flex items-center mb-3">
+                            <div class="bg-blue-700 text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-base mr-3 flex-shrink-0">${index + 1}</div>
+                            <h4 class="font-black text-slate-800 text-lg leading-tight break-words w-full">${res.name}</h4>
                         </div>
-                        <div class="ml-4 flex-1 overflow-hidden">
-                            <h4 class="font-black text-slate-800 text-lg truncate">${res.name}</h4>
-                            <p class="text-orange-600 font-black text-base mt-1">ห่าง ${res.dist.toFixed(1)} เมตร</p>
+                        
+                        <div class="w-full mb-3 flex justify-center">
+                            ${res.image ? `<img src="${res.image}" class="w-full h-32 md:h-40 object-cover rounded-xl border border-slate-200 cursor-pointer shadow-sm active:scale-95 transition-transform" onclick="document.getElementById('fullPhotoView').src='${res.image}'; document.getElementById('photoModal').classList.remove('hidden');">` : `<div class="w-full h-32 md:h-40 bg-slate-200 rounded-xl flex items-center justify-center text-sm font-bold text-slate-400 border border-slate-300">ไม่มีรูปภาพ (NO IMG)</div>`}
                         </div>
-                        <button onclick="window.setTarget('${res.id}'); document.getElementById('whereAmIModal').classList.add('hidden')" class="ml-2 bg-blue-600 text-white p-3 rounded-2xl shadow-md active:scale-90 transition-transform">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
-                        </button>
+                        
+                        <div class="flex flex-col gap-2 mt-1">
+                            <p class="text-orange-600 font-black text-lg text-center bg-orange-100/50 py-2 rounded-xl border border-orange-200/50">ห่าง ${res.dist.toFixed(1)} เมตร</p>
+                            <button onclick="window.setTarget('${res.id}'); document.getElementById('whereAmIModal').classList.add('hidden')" class="w-full bg-blue-600 text-white py-3.5 rounded-xl shadow-md active:scale-95 transition-transform flex justify-center items-center font-bold text-lg mt-1">
+                                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                                นำทางไปยังจุดนี้
+                            </button>
+                        </div>
                     `;
                     container.appendChild(card);
                 });
@@ -254,13 +259,11 @@
                 renderMapMarkers(); updateNavigation(); window.scrollTo({ top: 0, behavior: 'smooth' });
             };
             
-            // Logic ปุ่มย้อนกลับและหยุดนำทาง
             document.getElementById('stopNavBtn').addEventListener('click', () => { activeTargetId = null; document.getElementById('navStatus').classList.add('hidden'); if (routingLine) map.removeLayer(routingLine); renderMapMarkers(); renderList(); });
             
-            // ระบบคลิกปุ่มย้อนกลับจากแถบสถานะนำทาง
             document.getElementById('backToWhereAmIBtn').addEventListener('click', () => {
-                document.getElementById('stopNavBtn').click(); // ยกเลิกเป้าหมายเดิม
-                document.getElementById('whereAmIBtn').click(); // เปิดหน้าต่างค้นหาใหม่
+                document.getElementById('stopNavBtn').click(); 
+                document.getElementById('whereAmIBtn').click(); 
             });
 
             function updateNavigation() { if (!currentPosition || !activeTargetId) return; const target = foundations.find(f => f.id === activeTargetId); const dist = currentPosition.distanceTo(L.latLng(target.lat, target.lng)); document.getElementById('navDistance').textContent = dist.toFixed(1) + ' เมตร'; if (routingLine) map.removeLayer(routingLine); routingLine = L.polyline([currentPosition, L.latLng(target.lat, target.lng)], {color: 'red', weight: 4, dashArray: '8, 8'}).addTo(map); renderList(); }
