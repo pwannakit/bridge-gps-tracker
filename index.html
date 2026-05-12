@@ -30,7 +30,7 @@
             <h1 class="text-xl font-bold tracking-tight">ระบบพิกัดฐานรากสะพาน</h1>
             <p class="text-xs text-blue-100 mt-1 opacity-80">Cloud Sync Enabled</p>
             <div class="absolute top-3 right-4 text-[10px] font-mono text-blue-200 bg-blue-800/50 px-2 py-0.5 rounded-full border border-blue-600/50">
-                v2.0
+                v2.1
             </div>
         </div>
         
@@ -51,26 +51,39 @@
                 </div>
             </div>
 
-            <div id="map" class="mb-4 border border-slate-200 shadow-inner"></div>
-
-            <div id="navStatus" class="bg-red-50 p-4 rounded-xl border border-red-200 mb-4 hidden text-center shadow-sm">
-                <p class="text-sm text-red-600 font-bold uppercase tracking-wider">กำลังเดินไปยัง: <span id="navTargetName" class="underline"></span></p>
-                <p class="text-4xl font-black text-red-700 my-2" id="navDistance">-- เมตร</p>
-                <button id="stopNavBtn" class="mt-2 text-sm font-bold bg-slate-500 text-white px-6 py-2.5 rounded-full hover:bg-slate-600 transition-colors">หยุดนำทาง</button>
-            </div>
-
-            <div class="flex justify-between items-center mb-4 mt-6 border-b pb-2">
-                <h2 class="text-xl font-black text-slate-800">จุดที่บันทึกไว้</h2>
-                <button id="openAddModalBtn" class="bg-green-600 hover:bg-green-700 text-white text-base font-bold py-2.5 px-5 rounded-xl flex items-center shadow-md active:scale-95 transition-all">
-                    <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    เพิ่มจุด
+            <div class="mb-4 mt-2">
+                <button id="toggleSystemBtn" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 px-4 rounded-xl shadow-sm transition-all active:scale-95 flex items-center justify-center text-base border border-slate-300">
+                    <span class="flex items-center">
+                        <svg id="toggleIcon" class="w-6 h-6 mr-2 text-slate-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path id="toggleIconPath" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                        <span id="toggleText">แสดงเมนู "เพิ่มตำแหน่ง"</span>
+                    </span>
                 </button>
             </div>
 
-            <div id="foundationList" class="space-y-4 max-h-[500px] overflow-y-auto pb-6">
-                <p class="text-center text-slate-400 py-10 text-base">ยังไม่มีข้อมูล...</p>
+            <div id="systemContentContainer" class="hidden transition-all duration-300">
+                <div id="map" class="mb-4 border border-slate-200 shadow-inner"></div>
+
+                <div id="navStatus" class="bg-red-50 p-4 rounded-xl border border-red-200 mb-4 hidden text-center shadow-sm">
+                    <p class="text-sm text-red-600 font-bold uppercase tracking-wider">กำลังเดินไปยัง: <span id="navTargetName" class="underline"></span></p>
+                    <p class="text-4xl font-black text-red-700 my-2" id="navDistance">-- เมตร</p>
+                    <button id="stopNavBtn" class="mt-2 text-sm font-bold bg-slate-500 text-white px-6 py-2.5 rounded-full hover:bg-slate-600 transition-colors">หยุดนำทาง</button>
+                </div>
+
+                <div class="flex justify-between items-center mb-4 mt-6 border-b pb-2">
+                    <h2 class="text-xl font-black text-slate-800">จุดที่บันทึกไว้</h2>
+                    <button id="openAddModalBtn" class="bg-green-600 hover:bg-green-700 text-white text-base font-bold py-2.5 px-5 rounded-xl flex items-center shadow-md active:scale-95 transition-all">
+                        <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        เพิ่มจุด
+                    </button>
+                </div>
+
+                <div id="foundationList" class="space-y-4 max-h-[500px] overflow-y-auto pb-6">
+                    <p class="text-center text-slate-400 py-10 text-base">ยังไม่มีข้อมูล...</p>
+                </div>
             </div>
-        </div>
+            </div>
     </div>
 
     <div id="formModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
@@ -137,6 +150,32 @@
 
             renderList(); renderMapMarkers();
 
+            // ระบบ Toggle ซ่อน/แสดงเนื้อหาเมนูเพิ่มตำแหน่ง
+            const toggleSystemBtn = document.getElementById('toggleSystemBtn');
+            const systemContentContainer = document.getElementById('systemContentContainer');
+            const toggleText = document.getElementById('toggleText');
+            const toggleIconPath = document.getElementById('toggleIconPath');
+
+            toggleSystemBtn.addEventListener('click', () => {
+                if (systemContentContainer.classList.contains('hidden')) {
+                    systemContentContainer.classList.remove('hidden');
+                    toggleText.textContent = 'ซ่อนเมนู "เพิ่มตำแหน่ง"';
+                    toggleIconPath.setAttribute('d', 'M5 15l7-7 7 7'); // ลูกศรชี้ขึ้น
+                    
+                    // ป้องกันบัคแผนที่เทาเมื่อถูกซ่อน ต้องบังคับรีเฟรชขนาดแผนที่หลังจากแสดงผล
+                    setTimeout(() => {
+                        map.invalidateSize();
+                        if (!currentPosition && foundations.length > 0) {
+                            renderMapMarkers(); // ปรับมุมมองใหม่ให้เห็นทุกหมุด
+                        }
+                    }, 200);
+                } else {
+                    systemContentContainer.classList.add('hidden');
+                    toggleText.textContent = 'แสดงเมนู "เพิ่มตำแหน่ง"';
+                    toggleIconPath.setAttribute('d', 'M19 9l-7 7-7-7'); // ลูกศรชี้ลง
+                }
+            });
+
             const trackBtn = document.getElementById('trackLocationBtn');
             trackBtn.addEventListener('click', () => {
                 if (!navigator.geolocation) return alert('ไม่รองรับ GPS');
@@ -173,6 +212,12 @@
             window.setTarget = (id) => {
                 activeTargetId = id; document.getElementById('navStatus').classList.remove('hidden');
                 document.getElementById('navTargetName').textContent = foundations.find(f => f.id === id).name;
+                
+                // ถ้าระบบยังถูกซ่อนอยู่ ให้เปิดแสดงก่อน เพื่อให้แผนที่ทำงาน
+                if (systemContentContainer.classList.contains('hidden')) {
+                    toggleSystemBtn.click();
+                }
+
                 renderMapMarkers(); updateNavigation(); window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
