@@ -13,6 +13,14 @@
         #formModal, #photoModal, #loadingModal { z-index: 9999; }
         #foundationList::-webkit-scrollbar { width: 4px; }
         #foundationList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* ขยายปุ่มซูมแผนที่ (+/-) ให้ใหญ่ขึ้นสำหรับนิ้วมือ */
+        .leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out {
+            width: 44px !important;
+            height: 44px !important;
+            line-height: 44px !important;
+            font-size: 24px !important;
+        }
     </style>
 </head>
 <body class="bg-slate-100 p-2 md:p-4 font-sans">
@@ -25,94 +33,93 @@
         
         <div class="p-4">
             <div class="mb-4">
-                <button id="trackLocationBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                <button id="trackLocationBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center text-lg">
+                    <svg class="w-7 h-7 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
                     เริ่มติดตามตำแหน่ง GPS
                 </button>
             </div>
 
-            <div id="locationData" class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-4 hidden animate-pulse">
-                <div class="grid grid-cols-2 gap-2 text-xs">
+            <div id="locationData" class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4 hidden animate-pulse">
+                <div class="grid grid-cols-2 gap-2 text-sm">
                     <div class="text-slate-500 font-medium italic">ตำแหน่งปัจจุบัน:</div>
                     <div id="currentCoords" class="font-mono text-slate-800 text-right font-bold">-</div>
                     <div class="text-slate-500 font-medium italic">ความแม่นยำ:</div>
-                    <div id="accVal" class="font-mono text-blue-600 text-right font-bold">-</div>
+                    <div id="accVal" class="font-mono text-blue-600 text-right font-bold text-base">-</div>
                 </div>
             </div>
 
             <div id="map" class="mb-4 border border-slate-200 shadow-inner"></div>
 
             <div id="navStatus" class="bg-red-50 p-4 rounded-xl border border-red-200 mb-4 hidden text-center shadow-sm">
-                <p class="text-xs text-red-600 font-bold uppercase tracking-wider">กำลังเดินไปยัง: <span id="navTargetName" class="underline"></span></p>
-                <p class="text-3xl font-black text-red-700 my-1" id="navDistance">-- เมตร</p>
-                <button id="stopNavBtn" class="mt-2 text-xs bg-slate-500 text-white px-4 py-1.5 rounded-full hover:bg-slate-600 transition-colors">หยุดนำทาง</button>
+                <p class="text-sm text-red-600 font-bold uppercase tracking-wider">กำลังเดินไปยัง: <span id="navTargetName" class="underline"></span></p>
+                <p class="text-4xl font-black text-red-700 my-2" id="navDistance">-- เมตร</p>
+                <button id="stopNavBtn" class="mt-2 text-sm font-bold bg-slate-500 text-white px-6 py-2.5 rounded-full hover:bg-slate-600 transition-colors">หยุดนำทาง</button>
             </div>
 
-            <div class="flex justify-between items-center mb-3 mt-4">
-                <h2 class="text-lg font-bold text-slate-800 flex items-center">จุดที่บันทึกไว้</h2>
-                <button id="openAddModalBtn" class="bg-green-600 hover:bg-green-700 text-white text-sm font-bold py-2 px-4 rounded-lg flex items-center shadow-md active:scale-95 transition-all">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <div class="flex justify-between items-center mb-4 mt-6 border-b pb-2">
+                <h2 class="text-xl font-black text-slate-800">จุดที่บันทึกไว้</h2>
+                <button id="openAddModalBtn" class="bg-green-600 hover:bg-green-700 text-white text-base font-bold py-2.5 px-5 rounded-xl flex items-center shadow-md active:scale-95 transition-all">
+                    <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     เพิ่มจุด
                 </button>
             </div>
 
-            <div id="foundationList" class="space-y-3 max-h-[400px] overflow-y-auto pb-6">
-                <p class="text-center text-slate-400 py-10 text-sm">ยังไม่มีข้อมูล...</p>
+            <div id="foundationList" class="space-y-4 max-h-[500px] overflow-y-auto pb-6">
+                <p class="text-center text-slate-400 py-10 text-base">ยังไม่มีข้อมูล...</p>
             </div>
         </div>
     </div>
 
     <div id="formModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200">
-            <h3 id="modalTitle" class="text-xl font-bold mb-5 text-slate-800 border-b pb-2">บันทึกพิกัดใหม่</h3>
+        <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h3 id="modalTitle" class="text-2xl font-black mb-5 text-slate-800 border-b pb-3">บันทึกพิกัดใหม่</h3>
             <input type="hidden" id="formId">
             
-            <div class="mb-4">
-                <label class="block text-sm font-bold text-slate-700 mb-1">ชื่อฐานราก (เช่น Pier 1)</label>
-                <input type="text" id="formName" class="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg">
-            </div>
-
-            <div class="mb-4">
-                <div class="flex justify-between mb-1 items-end">
-                    <label class="block text-sm font-bold text-slate-700">ค่าพิกัด GPS</label>
-                    <button id="useCurrentLocationBtn" type="button" class="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-200 flex items-center">ดึงตำแหน่งปัจจุบัน</button>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="number" id="formLat" step="any" placeholder="Lat" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono bg-slate-50">
-                    <input type="number" id="formLng" step="any" placeholder="Lng" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm font-mono bg-slate-50">
-                </div>
+            <div class="mb-5">
+                <label class="block text-base font-bold text-slate-700 mb-2">ชื่อฐานราก (เช่น Pier 1)</label>
+                <input type="text" id="formName" class="w-full px-4 py-3.5 border-2 border-slate-200 rounded-xl focus:ring-0 focus:border-blue-500 outline-none text-lg transition-colors">
             </div>
 
             <div class="mb-5">
-                <label class="block text-sm font-bold text-slate-700 mb-1">รูปถ่ายหน้างาน</label>
-                <input type="file" id="formImage" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                <div class="flex justify-between mb-2 items-center">
+                    <label class="block text-base font-bold text-slate-700">ค่าพิกัด GPS</label>
+                    <button id="useCurrentLocationBtn" type="button" class="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 flex items-center active:scale-95">ดึงตำแหน่งปัจจุบัน</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="number" id="formLat" step="any" placeholder="Lat" class="w-full px-3 py-3 border-2 border-slate-200 rounded-xl text-sm font-mono bg-slate-50 focus:border-blue-500 outline-none">
+                    <input type="number" id="formLng" step="any" placeholder="Lng" class="w-full px-3 py-3 border-2 border-slate-200 rounded-xl text-sm font-mono bg-slate-50 focus:border-blue-500 outline-none">
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-base font-bold text-slate-700 mb-2">รูปถ่ายหน้างาน</label>
+                <input type="file" id="formImage" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
                 <div class="mt-3 relative hidden" id="imagePreviewContainer">
-                    <img id="imagePreview" src="" class="max-h-40 rounded-xl border border-slate-200 w-full object-cover shadow-sm">
-                    <button type="button" id="removeImgBtn" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-md">✕</button>
+                    <img id="imagePreview" src="" class="max-h-48 rounded-xl border-2 border-slate-200 w-full object-cover shadow-sm">
+                    <button type="button" id="removeImgBtn" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 shadow-lg active:scale-90">✕</button>
                 </div>
                 <input type="hidden" id="formImageDataUrl">
             </div>
 
-            <div class="flex gap-3 mt-6">
-                <button id="cancelBtn" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200">ยกเลิก</button>
-                <button id="saveBtn" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200">บันทึก & ซิงค์</button>
+            <div class="flex gap-3 mt-8">
+                <button id="cancelBtn" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 text-lg">ยกเลิก</button>
+                <button id="saveBtn" class="flex-[1.5] py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 text-lg active:scale-95 transition-all">บันทึก & ซิงค์</button>
             </div>
         </div>
     </div>
 
-    <div id="loadingModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 hidden">
-        <svg class="w-12 h-12 text-white animate-spin mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-        <p class="text-white font-bold text-lg">กำลังอัปโหลดขึ้นระบบ Cloud...</p>
-        <p class="text-slate-300 text-sm mt-2">อาจใช้เวลาสักครู่หากมีรูปภาพขนาดใหญ่</p>
+    <div id="loadingModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 hidden">
+        <svg class="w-16 h-16 text-blue-500 animate-spin mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        <p class="text-white font-bold text-2xl tracking-wide">กำลังอัปโหลด...</p>
+        <p class="text-slate-400 text-base mt-2">โปรดรอสักครู่</p>
     </div>
 
-    <div id="photoModal" class="fixed inset-0 bg-slate-950/95 flex items-center justify-center p-2 hidden" onclick="this.classList.add('hidden')"><img id="fullPhotoView" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"></div>
+    <div id="photoModal" class="fixed inset-0 bg-slate-950/95 flex items-center justify-center p-2 hidden" onclick="this.classList.add('hidden')"><img id="fullPhotoView" src="" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // =======================================================================
-        // นำ URL ที่ได้จากขั้นตอนที่ 1 มาวางแทนข้อความในเครื่องหมายคำพูดด้านล่างนี้เลยครับ
-        // =======================================================================
+        // URL ของ Web App จาก Google Apps Script (ใส่ข้อมูลเรียบร้อย)
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUrf7tBLEiqkkbTodqCXKWYOqsutzd1bWt7jRdp1gFoXeukqiSPn9nzINrHi8C9qVj/exec"; 
         // =======================================================================
 
@@ -132,19 +139,19 @@
                 if (!navigator.geolocation) return alert('ไม่รองรับ GPS');
                 if (watchId) {
                     navigator.geolocation.clearWatch(watchId); watchId = null;
-                    trackBtn.innerHTML = 'เริ่มติดตามตำแหน่ง GPS'; trackBtn.classList.replace('bg-green-600', 'bg-blue-600');
+                    trackBtn.innerHTML = '<svg class="w-7 h-7 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg> เริ่มติดตามตำแหน่ง GPS'; trackBtn.classList.replace('bg-green-600', 'bg-blue-600');
                     document.getElementById('locationData').classList.add('hidden');
                 } else {
-                    trackBtn.innerHTML = 'กำลังระบุตำแหน่ง...'; trackBtn.classList.replace('bg-blue-600', 'bg-green-600');
+                    trackBtn.innerHTML = '<svg class="w-7 h-7 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> กำลังระบุตำแหน่ง...'; trackBtn.classList.replace('bg-blue-600', 'bg-green-600');
                     document.getElementById('locationData').classList.remove('hidden');
                     watchId = navigator.geolocation.watchPosition(
                         (pos) => {
                             currentPosition = L.latLng(pos.coords.latitude, pos.coords.longitude);
-                            trackBtn.innerHTML = 'หยุดติดตาม GPS';
+                            trackBtn.innerHTML = '<svg class="w-7 h-7 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> หยุดติดตาม GPS';
                             document.getElementById('currentCoords').textContent = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
                             document.getElementById('accVal').textContent = `±${pos.coords.accuracy.toFixed(1)} m`;
                             if (userMarker) { userMarker.setLatLng(currentPosition); accuracyCircle.setLatLng(currentPosition).setRadius(pos.coords.accuracy); }
-                            else { userMarker = L.marker(currentPosition).addTo(map); accuracyCircle = L.circle(currentPosition, { radius: pos.coords.accuracy }).addTo(map); map.setView(currentPosition, 18); }
+                            else { userMarker = L.marker(currentPosition).addTo(map); accuracyCircle = L.circle(currentPosition, { radius: pos.coords.accuracy, color: '#3b82f6', fillOpacity: 0.2 }).addTo(map); map.setView(currentPosition, 18); }
                             updateNavigation();
                         }, (err) => { alert('หาพิกัดไม่ได้'); trackBtn.click(); }, { enableHighAccuracy: true }
                     );
@@ -154,10 +161,10 @@
             function renderMapMarkers() {
                 markersLayer.clearLayers(); let bounds = [];
                 foundations.forEach(f => {
-                    L.marker([f.lat, f.lng], { icon: f.id === activeTargetId ? redIcon : blueIcon }).bindPopup(`<b>${f.name}</b>`).addTo(markersLayer);
+                    L.marker([f.lat, f.lng], { icon: f.id === activeTargetId ? redIcon : blueIcon }).bindPopup(`<b class="text-base">${f.name}</b>`).addTo(markersLayer);
                     bounds.push([f.lat, f.lng]);
                 });
-                if (bounds.length > 0 && !currentPosition) map.fitBounds(bounds, { padding: [50, 50] });
+                if (bounds.length > 0 && !currentPosition) map.fitBounds(bounds, { padding: [40, 40] });
             }
 
             window.setTarget = (id) => {
@@ -177,13 +184,13 @@
                 const dist = currentPosition.distanceTo(L.latLng(target.lat, target.lng));
                 document.getElementById('navDistance').textContent = dist.toFixed(1) + ' เมตร';
                 if (routingLine) map.removeLayer(routingLine);
-                routingLine = L.polyline([currentPosition, L.latLng(target.lat, target.lng)], {color: 'red', weight: 4}).addTo(map);
+                routingLine = L.polyline([currentPosition, L.latLng(target.lat, target.lng)], {color: 'red', weight: 4, dashArray: '8, 8'}).addTo(map);
                 renderList();
             }
 
             function renderList() {
                 const list = document.getElementById('foundationList');
-                if (foundations.length === 0) { list.innerHTML = '<p class="text-center text-slate-400 py-10">ยังไม่มีข้อมูล...</p>'; return; }
+                if (foundations.length === 0) { list.innerHTML = '<p class="text-center text-slate-400 py-10 text-base">ยังไม่มีข้อมูล...</p>'; return; }
                 list.innerHTML = '';
                 let sorted = [...foundations];
                 if (currentPosition) sorted.sort((a, b) => currentPosition.distanceTo(L.latLng(a.lat, a.lng)) - currentPosition.distanceTo(L.latLng(b.lat, b.lng)));
@@ -191,17 +198,38 @@
                 sorted.forEach(f => {
                     const dist = currentPosition ? currentPosition.distanceTo(L.latLng(f.lat, f.lng)) : null;
                     const item = document.createElement('div');
-                    item.className = `p-3 border rounded-2xl flex items-center ${f.id === activeTargetId ? 'bg-red-50 border-red-200' : 'bg-white'}`;
+                    item.className = `p-4 border-2 rounded-2xl bg-white shadow-sm transition-all ${f.id === activeTargetId ? 'border-red-400 ring-4 ring-red-50' : 'border-slate-100'}`;
+                    
                     item.innerHTML = `
-                        ${f.image ? `<img src="${f.image}" class="w-16 h-16 object-cover rounded-xl cursor-pointer" onclick="document.getElementById('fullPhotoView').src='${f.image}'; document.getElementById('photoModal').classList.remove('hidden');">` : `<div class="w-16 h-16 bg-slate-50 flex items-center justify-center text-xs text-slate-400">ไม่มีรูป</div>`}
-                        <div class="flex-1 ml-4 overflow-hidden">
-                            <h4 class="font-black text-slate-800 text-sm truncate uppercase">${f.name}</h4>
-                            <p class="text-[10px] text-slate-400 font-mono">${f.lat.toFixed(6)}, ${f.lng.toFixed(6)}</p>
-                            <div class="flex gap-2 mt-2">
-                                <button onclick="window.setTarget('${f.id}')" class="bg-blue-50 text-blue-700 px-3 py-1.5 text-[11px] rounded-lg font-black uppercase">นำทาง</button>
-                                <button onclick="window.editData('${f.id}')" class="bg-slate-50 text-slate-600 px-3 py-1.5 text-[11px] rounded-lg font-black uppercase">แก้ไข</button>
-                                <button onclick="window.deleteData('${f.id}')" class="bg-red-50 text-red-500 px-3 py-1.5 text-[11px] rounded-lg font-black uppercase ml-auto">ลบ</button>
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                ${f.image ? `<img src="${f.image}" class="w-20 h-20 md:w-24 md:h-24 object-cover rounded-xl border border-slate-200 cursor-pointer shadow-sm active:scale-95 transition-transform" onclick="document.getElementById('fullPhotoView').src='${f.image}'; document.getElementById('photoModal').classList.remove('hidden');">` : `<div class="w-20 h-20 md:w-24 md:h-24 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400"><svg class="w-6 h-6 mb-1 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span class="text-[10px] font-medium">ไม่มีรูป</span></div>`}
                             </div>
+                            <div class="ml-4 overflow-hidden w-full">
+                                <h4 class="font-black text-slate-800 text-lg truncate tracking-tight">${f.name}</h4>
+                                <div class="flex flex-col mt-1">
+                                    <p class="text-sm text-slate-500 font-mono tracking-tighter flex items-center">
+                                        <svg class="w-4 h-4 mr-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                                        ${f.lat.toFixed(6)}, ${f.lng.toFixed(6)}
+                                    </p>
+                                    ${dist !== null ? `<span class="mt-1 inline-block w-max text-sm font-black text-red-700 bg-red-100 px-3 py-1 rounded-full">${dist.toFixed(1)} เมตร</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-100">
+                            <button onclick="window.setTarget('${f.id}')" class="flex flex-col items-center justify-center bg-blue-50 text-blue-700 py-3 rounded-xl hover:bg-blue-100 active:scale-95 transition-all">
+                                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                                <span class="text-xs font-black uppercase tracking-wider">นำทาง</span>
+                            </button>
+                            <button onclick="window.editData('${f.id}')" class="flex flex-col items-center justify-center bg-slate-50 text-slate-700 py-3 rounded-xl hover:bg-slate-100 active:scale-95 transition-all">
+                                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                <span class="text-xs font-black uppercase tracking-wider">แก้ไข</span>
+                            </button>
+                            <button onclick="window.deleteData('${f.id}')" class="flex flex-col items-center justify-center bg-red-50 text-red-600 py-3 rounded-xl hover:bg-red-100 active:scale-95 transition-all">
+                                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                <span class="text-xs font-black uppercase tracking-wider">ลบ</span>
+                            </button>
                         </div>
                     `;
                     list.appendChild(item);
@@ -254,7 +282,6 @@
                 reader.readAsDataURL(file);
             });
 
-            // ปรับปรุงปุ่มบันทึกให้เชื่อมกับ Cloud
             document.getElementById('saveBtn').addEventListener('click', async () => {
                 const id = document.getElementById('formId').value || Date.now().toString();
                 const data = {
@@ -265,9 +292,8 @@
                     image: document.getElementById('formImageDataUrl').value
                 };
 
-                if (!data.name || isNaN(data.lat)) return alert('กรอกข้อมูลไม่ครบ');
+                if (!data.name || isNaN(data.lat)) return alert('กรอกข้อมูลให้ครบก่อนนะครับ');
 
-                // 1. บันทึกลงเครื่องก่อน (กันเน็ตหลุด)
                 const idx = foundations.findIndex(f => f.id === id);
                 if (idx >= 0) foundations[idx] = data; else foundations.push(data);
                 localStorage.setItem('bridge_foundations', JSON.stringify(foundations));
@@ -275,28 +301,22 @@
                 modal.classList.add('hidden');
                 renderMapMarkers(); renderList();
 
-                // 2. ส่งข้อมูลขึ้น Cloud (Google Sheets / Drive)
                 if (GOOGLE_SCRIPT_URL === "วาง_URL_ของ_WEB_APP_ตรงนี้") {
-                    alert("คุณยังไม่ได้ใส่ URL ของ Google Apps Script ในโค้ด ข้อมูลถูกเซฟลงมือถืออย่างเดียวครับ");
-                    return;
+                    return; // ป้องกันเผื่อมีการแก้ไขโค้ดกลับไปเป็นค่าตั้งต้น
                 }
 
                 document.getElementById('loadingModal').classList.remove('hidden');
                 
                 try {
-                    // ใช้ mode: 'no-cors' ป้องกันปัญหา Cross-Origin จากโทรศัพท์
                     await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors', 
+                        method: 'POST', mode: 'no-cors', 
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
-                    
                     document.getElementById('loadingModal').classList.add('hidden');
-                    alert('ซิงค์ข้อมูลขึ้น Google Sheets สำเร็จ!');
                 } catch (error) {
                     document.getElementById('loadingModal').classList.add('hidden');
-                    alert('ส่งขึ้น Cloud ไม่สำเร็จ (เน็ตอาจจะหลุด) แต่ข้อมูลยังเซฟอยู่ในเครื่องครับ!');
+                    alert('ส่งขึ้น Cloud ไม่สำเร็จ แต่ข้อมูลยังเซฟอยู่ในเครื่องครับ');
                 }
             });
 
@@ -310,7 +330,7 @@
             };
 
             window.deleteData = (id) => {
-                if (confirm('ลบจุดนี้? (ถ้าส่งขึ้น Sheet ไปแล้ว จะต้องตามไปลบใน Sheet ด้วยตัวเองนะครับ)')) {
+                if (confirm('ลบจุดนี้? (ถ้าซิงค์ขึ้นตารางแล้ว ต้องไปลบในตารางเองด้วยนะครับ)')) {
                     foundations = foundations.filter(f => f.id !== id);
                     localStorage.setItem('bridge_foundations', JSON.stringify(foundations));
                     if(activeTargetId === id) document.getElementById('stopNavBtn').click();
