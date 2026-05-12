@@ -29,7 +29,7 @@
             <h1 class="text-xl font-bold tracking-tight">ระบบพิกัดฐานรากสะพาน</h1>
             <p class="text-xs text-blue-100 mt-1 opacity-80">Cloud Sync Enabled</p>
             <div class="absolute top-3 right-4 text-[10px] font-mono text-blue-200 bg-blue-800/50 px-2 py-0.5 rounded-full border border-blue-600/50">
-                v2.3
+                v2.4
             </div>
         </div>
         
@@ -114,12 +114,19 @@
             <div class="flex gap-3 mt-8"><button id="cancelBtn" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold text-lg">ยกเลิก</button><button id="saveBtn" class="flex-[1.5] py-4 bg-blue-600 text-white rounded-xl font-bold text-lg">บันทึก & ซิงค์</button></div>
         </div>
     </div>
-    <div id="loadingModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 hidden"><svg class="w-16 h-16 text-blue-500 animate-spin mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><p class="text-white font-bold text-2xl tracking-wide">กำลังอัปโหลด...</p></div>
+    
+    <div id="loadingModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 hidden">
+        <svg class="w-16 h-16 text-blue-500 animate-spin mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        <p id="loadingText" class="text-white font-bold text-2xl tracking-wide">กำลังอัปโหลด...</p>
+    </div>
+    
     <div id="photoModal" class="fixed inset-0 bg-slate-950/95 flex items-center justify-center p-2 hidden" onclick="this.classList.add('hidden')"><img id="fullPhotoView" src="" class="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // =======================================================================
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUrf7tBLEiqkkbTodqCXKWYOqsutzd1bWt7jRdp1gFoXeukqiSPn9nzINrHi8C9qVj/exec"; 
+        // =======================================================================
 
         document.addEventListener('DOMContentLoaded', () => {
             let foundations = JSON.parse(localStorage.getItem('bridge_foundations')) || [];
@@ -132,7 +139,6 @@
 
             renderList(); renderMapMarkers();
 
-            // Toggle System Content
             const toggleBtn = document.getElementById('toggleSystemBtn');
             const systemContainer = document.getElementById('systemContentContainer');
             toggleBtn.addEventListener('click', () => {
@@ -143,11 +149,42 @@
                 if(isHidden) setTimeout(() => map.invalidateSize(), 200);
             });
 
-            // "Where Am I?" Logic
-            document.getElementById('whereAmIBtn').addEventListener('click', () => {
+            // -------------------------------------------------------------
+            // อัปเดตกลไก "ฉันอยู่ตรงไหน" ให้ดึงข้อมูลจาก Cloud ก่อนคำนวณ
+            // -------------------------------------------------------------
+            document.getElementById('whereAmIBtn').addEventListener('click', async () => {
                 if (!currentPosition) return alert('กรุณากดปุ่ม "ติดตาม GPS" และรอให้พิกัดขึ้นก่อนครับ');
-                if (foundations.length === 0) return alert('ยังไม่มีข้อมูลฐานรากในเครื่องครับ');
+                
+                const loadModal = document.getElementById('loadingModal');
+                const loadText = document.getElementById('loadingText');
+                
+                // โชว์หน้าต่างกำลังค้นหา
+                loadText.textContent = 'กำลังดึงข้อมูลจาก Cloud...';
+                loadModal.classList.remove('hidden');
 
+                try {
+                    // วิ่งไปดึงข้อมูลจาก Google Sheets (ผ่านฟังก์ชัน doGet ที่เราเพิ่มไป)
+                    const response = await fetch(GOOGLE_SCRIPT_URL);
+                    const cloudData = await response.json();
+                    
+                    if (cloudData && cloudData.length > 0) {
+                        // อัปเดตข้อมูลในระบบให้ตรงกับ Cloud ล่าสุด
+                        foundations = cloudData;
+                        localStorage.setItem('bridge_foundations', JSON.stringify(foundations));
+                        renderMapMarkers();
+                        renderList();
+                    }
+                } catch (error) {
+                    console.error("Cloud fetch error:", error);
+                    alert('เชื่อมต่อฐานข้อมูลไม่สำเร็จ จะค้นหาจากข้อมูลล่าสุดที่ค้างในเครื่องแทนนะครับ');
+                }
+
+                loadModal.classList.add('hidden');
+                loadText.textContent = 'กำลังอัปโหลด...'; // คืนค่าข้อความเผื่อไว้ใช้ตอนบันทึกจุดใหม่
+
+                if (foundations.length === 0) return alert('ยังไม่มีข้อมูลฐานรากในระบบฐานข้อมูลเลยครับ');
+
+                // เริ่มคำนวณระยะทาง
                 let results = foundations.map(f => {
                     const dist = currentPosition.distanceTo(L.latLng(f.lat, f.lng));
                     return { ...f, dist };
@@ -159,7 +196,6 @@
                     const card = document.createElement('div');
                     card.className = `p-4 border-2 rounded-2xl flex items-center bg-slate-50 transition-all active:scale-95 ${index === 0 ? 'border-orange-400 bg-orange-50' : 'border-slate-100'}`;
                     
-                    // ปรับปุ่มลูกศรนำทางในผลลัพธ์ให้ใหญ่ขึ้น กดง่ายขึ้น
                     card.innerHTML = `
                         <div class="bg-blue-700 text-white w-10 h-10 rounded-full flex items-center justify-center font-black text-lg mr-3 flex-shrink-0">${index + 1}</div>
                         <div class="flex-shrink-0">
@@ -178,8 +214,8 @@
 
                 document.getElementById('whereAmIModal').classList.remove('hidden');
             });
+            // -------------------------------------------------------------
 
-            // GPS Tracking
             const trackBtn = document.getElementById('trackLocationBtn');
             trackBtn.addEventListener('click', () => {
                 if (!navigator.geolocation) return alert('ไม่รองรับ GPS');
@@ -206,17 +242,13 @@
                 }
             });
 
-            function renderMapMarkers() { markersLayer.clearLayers(); foundations.forEach(f => { L.marker([f.lat, f.lng], { icon: f.id === activeTargetId ? redIcon : blueIcon }).addTo(markersLayer); }); }
+            function renderMapMarkers() { markersLayer.clearLayers(); foundations.forEach(f => { L.marker([f.lat, f.lng], { icon: f.id === activeTargetId ? redIcon : blueIcon }).bindPopup(`<b class="text-base">${f.name}</b>`).addTo(markersLayer); }); }
             
             window.setTarget = (id) => { 
                 activeTargetId = id; 
                 document.getElementById('navStatus').classList.remove('hidden'); 
                 document.getElementById('navTargetName').textContent = foundations.find(f => f.id === id).name; 
-                
-                if (systemContentContainer.classList.contains('hidden')) {
-                    toggleBtn.click();
-                }
-                
+                if (systemContainer.classList.contains('hidden')) { toggleBtn.click(); }
                 renderMapMarkers(); updateNavigation(); window.scrollTo({ top: 0, behavior: 'smooth' });
             };
             
@@ -224,7 +256,7 @@
             function updateNavigation() { if (!currentPosition || !activeTargetId) return; const target = foundations.find(f => f.id === activeTargetId); const dist = currentPosition.distanceTo(L.latLng(target.lat, target.lng)); document.getElementById('navDistance').textContent = dist.toFixed(1) + ' เมตร'; if (routingLine) map.removeLayer(routingLine); routingLine = L.polyline([currentPosition, L.latLng(target.lat, target.lng)], {color: 'red', weight: 4, dashArray: '8, 8'}).addTo(map); renderList(); }
             
             function renderList() {
-                const list = document.getElementById('foundationList'); if (foundations.length === 0) { list.innerHTML = '<p class="text-center text-slate-400 py-10">ยังไม่มีข้อมูล...</p>'; return; }
+                const list = document.getElementById('foundationList'); if (foundations.length === 0) { list.innerHTML = '<p class="text-center text-slate-400 py-10 text-base">ยังไม่มีข้อมูล...</p>'; return; }
                 list.innerHTML = '';
                 let sorted = [...foundations]; if (currentPosition) sorted.sort((a, b) => currentPosition.distanceTo(L.latLng(a.lat, a.lng)) - currentPosition.distanceTo(L.latLng(b.lat, b.lng)));
                 sorted.forEach(f => {
@@ -273,11 +305,19 @@
                 const id = document.getElementById('formId').value || Date.now().toString();
                 const data = { id, name: document.getElementById('formName').value.trim(), lat: parseFloat(document.getElementById('formLat').value), lng: parseFloat(document.getElementById('formLng').value), image: document.getElementById('formImageDataUrl').value };
                 if (!data.name || isNaN(data.lat)) return alert('กรอกข้อมูลให้ครบก่อนนะครับ');
+                
                 const idx = foundations.findIndex(f => f.id === id); if (idx >= 0) foundations[idx] = data; else foundations.push(data);
                 localStorage.setItem('bridge_foundations', JSON.stringify(foundations));
                 modal.classList.add('hidden'); renderMapMarkers(); renderList();
-                if (!GOOGLE_SCRIPT_URL) return; document.getElementById('loadingModal').classList.remove('hidden');
-                try { await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); document.getElementById('loadingModal').classList.add('hidden'); } catch (error) { document.getElementById('loadingModal').classList.add('hidden'); alert('ซิงค์ขึ้น Cloud ไม่สำเร็จ'); }
+                
+                if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("วาง_URL")) return; 
+                
+                const loadModal = document.getElementById('loadingModal');
+                document.getElementById('loadingText').textContent = 'กำลังอัปโหลด...';
+                loadModal.classList.remove('hidden');
+                
+                try { await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); loadModal.classList.add('hidden'); } 
+                catch (error) { loadModal.classList.add('hidden'); alert('ซิงค์ขึ้น Cloud ไม่สำเร็จ ข้อมูลเซฟแค่ในเครื่องครับ'); }
             });
             window.editData = (id) => { const t = foundations.find(f => f.id === id); document.getElementById('formId').value = t.id; document.getElementById('formName').value = t.name; document.getElementById('formLat').value = t.lat; document.getElementById('formLng').value = t.lng; document.getElementById('formImageDataUrl').value = t.image || ''; if (t.image) { document.getElementById('imagePreview').src = t.image; document.getElementById('imagePreviewContainer').classList.remove('hidden'); } modal.classList.remove('hidden'); };
             window.deleteData = (id) => { if (confirm('ลบจุดนี้?')) { foundations = foundations.filter(f => f.id !== id); localStorage.setItem('bridge_foundations', JSON.stringify(foundations)); renderMapMarkers(); renderList(); } };
