@@ -63,7 +63,7 @@
         <header class="mb-6 px-2">
             <div class="flex justify-between items-center mb-1">
                 <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Bridge Tracker</h1>
-                <span class="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-indigo-200">v3.0</span>
+                <span class="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-indigo-200">v3.1</span>
             </div>
             <p class="text-sm text-slate-500 font-medium">ระบบระบุตำแหน่งและจัดการฐานรากสะพาน</p>
         </header>
@@ -84,7 +84,7 @@
             </button>
         </div>
 
-        <!-- Location Status Data (Hidden by default) -->
+        <!-- Location Status Data -->
         <div id="locationData" class="glass-card rounded-[20px] p-5 mb-6 hidden animate-in fade-in slide-in-from-top-4 duration-300">
             <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
                 <span class="flex items-center text-sm font-semibold text-slate-500">
@@ -118,29 +118,30 @@
         <!-- Main System Container -->
         <div id="systemContentContainer" class="hidden transition-all duration-300 origin-top">
             
+            <!-- ป้ายสถานะนำทาง ย้ายออกมาไว้นอกแผนที่ -->
+            <div id="navStatus" class="bg-white p-4 rounded-[16px] border border-slate-200 shadow-sm mb-4 hidden animate-in fade-in zoom-in-95">
+                <div class="flex justify-between items-start mb-2">
+                    <div>
+                        <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-widest mb-0.5">กำลังนำทางไปยัง</p>
+                        <p class="text-base font-black text-slate-800 leading-tight" id="navTargetName">Pier Name</p>
+                    </div>
+                    <div class="text-right bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100">
+                        <p class="text-xl font-black text-orange-600 tracking-tighter" id="navDistance">--</p>
+                    </div>
+                </div>
+                <div class="flex gap-2 mt-4 pt-3 border-t border-slate-100">
+                    <button id="backToWhereAmIBtn" class="action-button flex-1 text-sm font-bold bg-slate-100 text-slate-700 py-2.5 rounded-xl hover:bg-slate-200">
+                        ย้อนกลับ
+                    </button>
+                    <button id="stopNavBtn" class="action-button flex-[1.5] text-sm font-bold bg-slate-800 text-white py-2.5 rounded-xl hover:bg-slate-900 shadow-md">
+                        หยุดนำทาง
+                    </button>
+                </div>
+            </div>
+
             <!-- Map Area -->
             <div class="relative mb-6">
                 <div id="map" class="shadow-md"></div>
-                <!-- Floating Nav Status overlay on map when active -->
-                <div id="navStatus" class="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur-md p-4 rounded-[16px] border border-slate-200/50 shadow-xl hidden z-[400] animate-in fade-in zoom-in-95">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <p class="text-[10px] text-indigo-600 font-bold uppercase tracking-widest mb-0.5">กำลังนำทางไปยัง</p>
-                            <p class="text-base font-black text-slate-800 leading-tight" id="navTargetName">Pier Name</p>
-                        </div>
-                        <div class="text-right bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100">
-                            <p class="text-xl font-black text-orange-600 tracking-tighter" id="navDistance">--</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-2 mt-4 pt-3 border-t border-slate-100">
-                        <button id="backToWhereAmIBtn" class="action-button flex-1 text-sm font-bold bg-slate-100 text-slate-700 py-2.5 rounded-xl hover:bg-slate-200">
-                            ย้อนกลับ
-                        </button>
-                        <button id="stopNavBtn" class="action-button flex-[1.5] text-sm font-bold bg-slate-800 text-white py-2.5 rounded-xl hover:bg-slate-900 shadow-md">
-                            หยุดนำทาง
-                        </button>
-                    </div>
-                </div>
             </div>
 
             <!-- List Header -->
@@ -173,7 +174,7 @@
     <div id="whereAmIModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
         <div class="bg-white rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] flex flex-col">
             
-            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 sm:hidden"></div> <!-- Pull indicator for mobile -->
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 sm:hidden"></div>
             
             <div class="flex justify-between items-center mb-6">
                 <div>
@@ -343,7 +344,6 @@
                 results.forEach((res, index) => {
                     const card = document.createElement('div');
                     
-                    // Design ใหม่สำหรับ Where Am I Card
                     card.className = `p-5 border rounded-2xl flex flex-col transition-all bg-white relative overflow-hidden ${index === 0 ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500' : 'border-slate-200'}`;
                     
                     if (index === 0) {
@@ -430,21 +430,28 @@
                         }, 
                         (err) => { 
                             alert('ไม่สามารถดึงข้อมูลพิกัดได้'); 
-                            trackBtn.click(); // Reset state
+                            trackBtn.click(); 
                         }, 
                         { enableHighAccuracy: true }
                     );
                 }
             });
 
+            // -----------------------------------------------------------------
+            // แก้ไข: ซ่อนหมุดที่ไม่เกี่ยวข้องเมื่อกดนำทาง (v3.1)
+            // -----------------------------------------------------------------
             function renderMapMarkers() { 
                 markersLayer.clearLayers(); 
                 foundations.forEach(f => { 
+                    // ถ้ากำลังนำทาง และไม่ใช่เป้าหมาย ให้ข้ามไปเลย (ไม่แสดงบนแผนที่)
+                    if (activeTargetId && f.id !== activeTargetId) return;
+
                     L.marker([f.lat, f.lng], { icon: f.id === activeTargetId ? redIcon : blueIcon })
                      .bindPopup(`<div class="px-2 py-1"><b class="text-sm font-black text-slate-800">${f.name}</b></div>`)
                      .addTo(markersLayer); 
                 }); 
             }
+            // -----------------------------------------------------------------
             
             window.setTarget = (id) => { 
                 activeTargetId = id; 
@@ -478,7 +485,7 @@
             
             function renderList() {
                 const list = document.getElementById('foundationList'); 
-                if (foundations.length === 0) return; // Keep the empty state UI
+                if (foundations.length === 0) return; 
                 
                 list.innerHTML = '';
                 let sorted = [...foundations]; 
@@ -488,7 +495,6 @@
                     const dist = currentPosition ? currentPosition.distanceTo(L.latLng(f.lat, f.lng)) : null;
                     const item = document.createElement('div');
                     
-                    // Design ใหม่สำหรับ List Item
                     item.className = `bg-white p-4 rounded-2xl border transition-all relative overflow-hidden ${f.id === activeTargetId ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500' : 'border-slate-200 shadow-sm'}`;
                     
                     item.innerHTML = `
