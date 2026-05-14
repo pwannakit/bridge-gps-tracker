@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bridge-tracker-v3.6';
+const CACHE_NAME = 'bridge-tracker-v3.7.1';
 const urlsToCache = [
     './',
     './index.html',
