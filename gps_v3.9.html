@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BridgeTracker">
+    <link rel="manifest" href="manifest.json?v=3.9">
+    <link rel="apple-touch-icon" href="icon.png?v=3.9">
+    
+    <title>Bridge Foundation Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* Custom Theme Colors */
+        :root {
+            --primary-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --accent-color: #4f46e5;
+            --secondary-color: #10b981;
+            --text-main: #1e293b;
+            --border-light: #e2e8f0;
+        }
+        body { background-color: var(--primary-bg); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        #map { height: 400px; width: 100%; z-index: 10; border-radius: 16px; border: 1px solid var(--border-light); }
+        .leaflet-touch .leaflet-control-zoom-in, .leaflet-touch .leaflet-control-zoom-out { width: 44px !important; height: 44px !important; line-height: 44px !important; font-size: 24px !important; border-radius: 12px !important; background: var(--card-bg) !important; color: var(--text-main) !important; border: 1px solid var(--border-light) !important; }
+        .leaflet-bar { border: none !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important; border-radius: 12px !important; overflow: hidden; }
+        #formModal, #photoModal, #loadingModal, #whereAmIModal { z-index: 9999; }
+        #foundationList::-webkit-scrollbar, #closestResults::-webkit-scrollbar { width: 6px; }
+        #foundationList::-webkit-scrollbar-thumb, #closestResults::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); }
+        .action-button { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .action-button:active { transform: scale(0.96); }
+        .custom-marker-icon { background: none; border: none; }
+    </style>
+</head>
+<body class="p-3 md:p-6 pb-10">
+
+    <div class="max-w-md mx-auto relative">
+        <header class="mb-6 px-2">
+            <div class="flex justify-between items-center mb-1">
+                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Bridge Tracker</h1>
+                <span class="px-2.5 py-1 bg-indigo-100 text-indigo-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-indigo-200">v3.9 PWA</span>
+            </div>
+            <p class="text-sm text-slate-500 font-medium">ระบบระบุตำแหน่งและจัดการฐานรากสะพาน</p>
+        </header>
+        
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <button id="trackLocationBtn" class="action-button flex flex-col items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-[20px] p-5 shadow-lg shadow-indigo-600/30 border border-indigo-500">
+                <div class="bg-white/20 p-3 rounded-full mb-3"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg></div>
+                <span class="font-bold text-base tracking-wide">ติดตามพิกัด</span>
+            </button>
+            <button id="whereAmIBtn" class="action-button flex flex-col items-center justify-center bg-white text-slate-800 rounded-[20px] p-5 shadow-xl shadow-slate-200/50 border border-slate-200 hover:bg-slate-50">
+                <div class="bg-orange-100 text-orange-600 p-3 rounded-full mb-3"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                <span class="font-bold text-base tracking-wide">ฉันอยู่ตรงไหน?</span>
+            </button>
+        </div>
+
+        <div id="locationData" class="glass-card rounded-[20px] p-5 mb-6 hidden animate-in fade-in slide-in-from-top-4 duration-300">
+            <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                <span class="flex items-center text-sm font-semibold text-slate-500">
+                    <span class="relative flex h-3 w-3 mr-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span></span>สถานะ GPS ปัจจุบัน
+                </span>
+                <span id="accVal" class="text-xs font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">-</span>
+            </div>
+            <div class="flex flex-col"><span class="text-[11px] uppercase tracking-widest text-slate-400 font-bold mb-1">พิกัด Lat, Lng</span><span id="currentCoords" class="font-mono text-lg text-slate-800 font-bold tracking-tight">-</span></div>
+        </div>
+
+        <div class="mb-6 relative">
+            <div class="absolute inset-0 flex items-center" aria-hidden="true"><div class="w-full border-t border-slate-300 border-dashed"></div></div>
+            <div class="relative flex justify-center">
+                <button id="toggleSystemBtn" class="action-button flex items-center bg-white px-5 py-2.5 text-sm font-bold text-slate-600 border border-slate-200 rounded-full shadow-sm hover:text-slate-900 hover:bg-slate-50">
+                    <svg id="toggleIcon" class="w-5 h-5 mr-1.5 transition-transform duration-300 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path id="toggleIconPath" stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg><span id="toggleText">เปิดดูแผนที่ & ฐานข้อมูล</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="systemContentContainer" class="hidden transition-all duration-300 origin-top">
+            <div id="navStatus" class="bg-white p-4 rounded-[16px] border border-slate-200 shadow-sm mb-4 hidden animate-in fade-in zoom-in-95">
+                <div class="flex justify-between items-start mb-2">
+                    <div><p class="text-[10px] text-indigo-600 font-bold uppercase tracking-widest mb-0.5">กำลังนำทางไปยัง</p><p class="text-base font-black text-slate-800 leading-tight" id="navTargetName">Pier Name</p></div>
+                    <div class="text-right bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100"><p class="text-xl font-black text-orange-600 tracking-tighter" id="navDistance">--</p></div>
+                </div>
+                <div class="flex gap-2 mt-4 pt-3 border-t border-slate-100">
+                    <button id="backToWhereAmIBtn" class="action-button flex-1 text-sm font-bold bg-slate-100 text-slate-700 py-2.5 rounded-xl hover:bg-slate-200">ย้อนกลับ</button>
+                    <button id="stopNavBtn" class="action-button flex-[1.5] text-sm font-bold bg-slate-800 text-white py-2.5 rounded-xl hover:bg-slate-900 shadow-md">หยุดนำทาง</button>
+                </div>
+            </div>
+
+            <div class="relative mb-6"><div id="map" class="shadow-md"></div></div>
+
+            <div class="flex justify-between items-center mb-4 px-1">
+                <div id="toggleListHeader" class="cursor-pointer group select-none py-1 flex-1">
+                    <div class="flex items-center">
+                        <h2 class="text-xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">จุดพิกัดทั้งหมด</h2>
+                        <svg id="toggleListIcon" class="w-5 h-5 ml-1 text-slate-400 group-hover:text-indigo-600 transition-transform duration-300 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"></path></svg>
+                    </div>
+                    <p id="toggleListSubtitle" class="text-xs text-slate-500 font-medium mt-0.5">ซ่อนรายการอยู่ แตะเพื่อแสดง</p>
+                </div>
+                <button id="openAddModalBtn" class="action-button flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold py-2.5 px-5 rounded-full shadow-lg shadow-emerald-500/30 flex items-center"><svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>เพิ่มพิกัด</button>
+            </div>
+
+            <div id="searchContainer" class="px-1 mb-3 hidden transition-all duration-300">
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+                    <input type="text" id="searchInput" class="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors text-sm font-medium text-slate-800 shadow-sm" placeholder="ค้นหาชื่อฐานราก...">
+                </div>
+            </div>
+
+            <div id="foundationList" class="space-y-4 max-h-[500px] overflow-y-auto pb-8 px-1 transition-all duration-300 hidden">
+                <div class="flex flex-col items-center justify-center py-16 text-center bg-white rounded-3xl border border-dashed border-slate-300">
+                    <div class="bg-slate-50 p-4 rounded-full mb-3"><svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg></div>
+                    <p class="text-slate-500 font-medium">ยังไม่มีข้อมูลฐานราก</p><p class="text-xs text-slate-400 mt-1">กดปุ่ม "เพิ่มพิกัด" เพื่อเริ่มต้นใช้งาน</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="whereAmIModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+        <div class="bg-white rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-md shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[90vh] flex flex-col">
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6 sm:hidden"></div>
+            <div class="flex justify-between items-center mb-6">
+                <div><h3 class="text-2xl font-black text-slate-800 tracking-tight">ใกล้ฉันที่สุด</h3><p class="text-sm text-slate-500 font-medium mt-1">อ้างอิงจากพิกัด GPS ปัจจุบัน</p></div>
+                <button onclick="document.getElementById('whereAmIModal').classList.add('hidden')" class="bg-slate-100 hover:bg-slate-200 text-slate-500 w-10 h-10 rounded-full flex items-center justify-center transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div id="closestResults" class="space-y-4 overflow-y-auto flex-1 pb-4 pr-2"></div>
+            <div class="pt-4 border-t border-slate-100 mt-2"><button onclick="document.getElementById('whereAmIModal').classList.add('hidden')" class="action-button w-full py-4 bg-slate-800 text-white rounded-2xl font-bold text-lg">ปิดหน้าต่างนี้</button></div>
+        </div>
+    </div>
+
+    <div id="formModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-[24px] p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <div class="text-center mb-6"><div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 mb-3"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg></div><h3 class="text-2xl font-black text-slate-800">บันทึกพิกัดใหม่</h3></div>
+            <input type="hidden" id="formId">
+            <div class="space-y-5">
+                <div><label class="block text-sm font-bold text-slate-700 mb-2">ชื่อจุด / หมายเลขฐานราก</label><input type="text" id="formName" class="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors font-medium text-slate-800"></div>
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex justify-between items-center mb-3"><label class="text-sm font-bold text-slate-700">พิกัด GPS</label><button id="useCurrentLocationBtn" type="button" class="action-button text-[11px] font-bold bg-white text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-full hover:bg-indigo-50 flex items-center"><svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>ดึงพิกัดปัจจุบัน</button></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Latitude</span><input type="number" id="formLat" step="any" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg font-mono text-sm focus:border-indigo-500 outline-none"></div>
+                        <div><span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Longitude</span><input type="number" id="formLng" step="any" class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg font-mono text-sm focus:border-indigo-500 outline-none"></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">รูปถ่ายอ้างอิง</label>
+                    <div class="relative"><input type="file" id="formImage" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"><div class="w-full px-4 py-3 bg-slate-50 border border-slate-200 border-dashed rounded-xl flex items-center justify-center text-sm font-medium text-slate-500 hover:bg-slate-100 transition-colors"><svg class="w-5 h-5 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><span>แตะเพื่อเลือกรูปภาพ...</span></div></div>
+                    <div class="mt-3 relative hidden" id="imagePreviewContainer"><img id="imagePreview" src="" class="max-h-40 rounded-xl border border-slate-200 w-full object-cover shadow-sm"><button type="button" id="removeImgBtn" class="absolute top-2 right-2 bg-slate-900/70 text-white rounded-full p-1.5 backdrop-blur-sm hover:bg-red-500 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button></div><input type="hidden" id="formImageDataUrl">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-8 pt-4 border-t border-slate-100"><button id="cancelBtn" class="action-button flex-1 py-3.5 bg-slate-100 text-slate-700 rounded-xl font-bold">ยกเลิก</button><button id="saveBtn" class="action-button flex-[1.5] py-3.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-600/30">บันทึกพิกัด</button></div>
+        </div>
+    </div>
+    
+    <div id="loadingModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 hidden">
+        <div class="bg-white p-6 rounded-3xl flex flex-col items-center shadow-2xl"><svg class="w-12 h-12 text-indigo-600 animate-spin mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg><p id="loadingText" class="text-slate-800 font-black text-lg tracking-tight">กำลังประมวลผล...</p><p class="text-xs text-slate-500 mt-1">โปรดรอสักครู่</p></div>
+    </div>
+    
+    <div id="photoModal" class="fixed inset-0 bg-slate-900/95 flex items-center justify-center p-2 hidden z-[10000]" onclick="this.classList.add('hidden')">
+        <div class="relative max-w-full max-h-[90vh]"><img id="fullPhotoView" src="" class="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"><button class="absolute -top-4 -right-4 bg-white text-slate-900 w-10 h-10 rounded-full flex items-center justify-center shadow-xl border border-slate-200"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // =======================================================================
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxUrf7tBLEiqkkbTodqCXKWYOqsutzd1bWt7jRdp1gFoXeukqiSPn9nzINrHi8C9qVj/exec"; 
+        // =======================================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            let foundations = JSON.parse(localStorage.getItem('bridge_foundations')) || [];
+            let currentPosition = null; let watchId = null; let activeTargetId = null;
+            let map = L.map('map').setView([13.7563, 100.5018], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+            let userMarker, accuracyCircle, routingLine, markersLayer = L.layerGroup().addTo(map);
+            const blueIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+            const redIcon = L.icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+
+            const userLocationIcon = L.divIcon({ 
+                className: 'custom-marker-icon', 
+                html: `
+                    <div class="relative flex items-center justify-center w-12 h-12">
+                        <div id="dir-indicator" class="absolute inset-0 transition-transform duration-100 ease-out" style="opacity: 0; transform-origin: center;">
+                            <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-md"><path d="M50 0 L85 50 Q50 40 15 50 Z" fill="#3b82f6" opacity="0.4"/></svg>
+                        </div>
+                        <div class="relative flex h-5 w-5 z-10">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-5 w-5 bg-blue-600 border-2 border-white shadow-md"></span>
+                        </div>
+                    </div>
+                `, 
+                iconSize: [48, 48], 
+                iconAnchor: [24, 24] 
+            });
+
+            function handleOrientation(event) {
+                let heading = null;
+                if (event.webkitCompassHeading) { heading = event.webkitCompassHeading; } 
+                else if (event.alpha !== null) { heading = 360 - event.alpha; }
+                if (heading !== null) {
+                    const indicator = document.getElementById('dir-indicator');
+                    if (indicator) { indicator.style.opacity = '1'; indicator.style.transform = `rotate(${heading}deg)`; }
+                }
+            }
+
+            renderList(); renderMapMarkers();
+
+            const toggleBtn = document.getElementById('toggleSystemBtn');
+            const systemContainer = document.getElementById('systemContentContainer');
+            toggleBtn.addEventListener('click', () => {
+                const isHidden = systemContainer.classList.contains('hidden');
+                systemContainer.classList.toggle('hidden');
+                document.getElementById('toggleText').textContent = isHidden ? 'ซ่อนระบบฐานข้อมูล' : 'เปิดดูแผนที่ & ฐานข้อมูล';
+                document.getElementById('toggleIconPath').setAttribute('d', isHidden ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7');
+                if(isHidden) setTimeout(() => map.invalidateSize(), 200);
+            });
+
+            const toggleListHeader = document.getElementById('toggleListHeader');
+            const foundationListContainer = document.getElementById('foundationList');
+            const toggleListIcon = document.getElementById('toggleListIcon');
+            const toggleListSubtitle = document.getElementById('toggleListSubtitle');
+            const searchContainer = document.getElementById('searchContainer');
+
+            toggleListHeader.addEventListener('click', () => {
+                const isHidden = foundationListContainer.classList.contains('hidden');
+                if (isHidden) {
+                    foundationListContainer.classList.remove('hidden'); searchContainer.classList.remove('hidden');
+                    toggleListIcon.classList.remove('rotate-180'); toggleListSubtitle.textContent = 'แตะเพื่อซ่อน/แสดงรายการ';
+                } else {
+                    foundationListContainer.classList.add('hidden'); searchContainer.classList.add('hidden');
+                    toggleListIcon.classList.add('rotate-180'); toggleListSubtitle.textContent = 'ซ่อนรายการอยู่ แตะเพื่อแสดง';
+                }
+            });
+
+            document.getElementById('searchInput').addEventListener('input', () => renderList());
+
+            document.getElementById('whereAmIBtn').addEventListener('click', async () => {
+                if (!currentPosition) return alert('กรุณากดปุ่ม "ติดตามพิกัด" และรอให้พิกัดขึ้นก่อนครับ');
+                const loadModal = document.getElementById('loadingModal'); const loadText = document.getElementById('loadingText');
+                loadText.textContent = 'ซิงค์ข้อมูล...'; loadModal.classList.remove('hidden');
+                try {
+                    const response = await fetch(GOOGLE_SCRIPT_URL); const cloudData = await response.json();
+                    if (cloudData && cloudData.length > 0) { foundations = cloudData; localStorage.setItem('bridge_foundations', JSON.stringify(foundations)); renderMapMarkers(); renderList(); }
+                } catch (error) { console.error("Cloud fetch error:", error); }
+                loadModal.classList.add('hidden'); loadText.textContent = 'กำลังอัปโหลด...'; 
+                if (foundations.length === 0) return alert('ยังไม่มีข้อมูลฐานรากในระบบฐานข้อมูลเลยครับ');
+                let results = foundations.map(f => { return { ...f, dist: currentPosition.distanceTo(L.latLng(f.lat, f.lng)) }; }).sort((a, b) => a.dist - b.dist).slice(0, 3);
+                const container = document.getElementById('closestResults'); container.innerHTML = '';
+                results.forEach((res, index) => {
+                    const card = document.createElement('div');
+                    card.className = `p-5 border rounded-2xl flex flex-col transition-all bg-white relative overflow-hidden ${index === 0 ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500' : 'border-slate-200'}`;
+                    if (index === 0) card.innerHTML += `<div class="absolute top-0 right-0 bg-indigo-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">ใกล้สุด</div>`;
+                    card.innerHTML += `
+                        <div class="flex items-start mb-4">
+                            <div class="bg-${index === 0 ? 'indigo' : 'slate'}-100 text-${index === 0 ? 'indigo' : 'slate'}-700 w-10 h-10 rounded-full flex items-center justify-center font-black text-lg mr-3 flex-shrink-0">${index + 1}</div>
+                            <div class="flex-1 pt-1"><h4 class="font-black text-slate-800 text-xl leading-tight mb-1 pr-6">${res.name}</h4><span class="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-black bg-orange-100 text-orange-700">ห่าง ${res.dist.toFixed(1)} เมตร</span></div>
+                        </div>
+                        <div class="w-full mb-4">${res.image ? `<img src="${res.image}" class="w-full h-36 object-cover rounded-xl border border-slate-200 cursor-pointer shadow-sm active:opacity-75" onclick="document.getElementById('fullPhotoView').src='${res.image}'; document.getElementById('photoModal').classList.remove('hidden');">` : `<div class="w-full h-36 bg-slate-50 rounded-xl flex flex-col items-center justify-center text-sm font-medium text-slate-400 border border-dashed border-slate-300">ไม่มีรูปถ่ายอ้างอิง</div>`}</div>
+                        <button onclick="window.setTarget('${res.id}'); document.getElementById('whereAmIModal').classList.add('hidden')" class="action-button w-full bg-${index === 0 ? 'indigo' : 'slate'}-600 hover:bg-${index === 0 ? 'indigo' : 'slate'}-700 text-white py-3.5 rounded-xl font-bold flex justify-center items-center text-base">นำทางไปยังจุดนี้</button>
+                    `;
+                    container.appendChild(card);
+                });
+                document.getElementById('whereAmIModal').classList.remove('hidden');
+            });
+
+            const trackBtn = document.getElementById('trackLocationBtn'); let isTracking = false;
+            trackBtn.addEventListener('click', () => {
+                if (!navigator.geolocation) return alert('อุปกรณ์ของคุณไม่รองรับ GPS');
+                const iconContainer = trackBtn.querySelector('div'); const btnText = trackBtn.querySelector('span'); const locationDataBox = document.getElementById('locationData');
+                if (isTracking && watchId) {
+                    navigator.geolocation.clearWatch(watchId); watchId = null; isTracking = false;
+                    window.removeEventListener('deviceorientation', handleOrientation); window.removeEventListener('deviceorientationabsolute', handleOrientation);
+                    trackBtn.classList.replace('bg-emerald-600', 'bg-indigo-600'); trackBtn.classList.replace('shadow-emerald-600/30', 'shadow-indigo-600/30'); trackBtn.classList.replace('border-emerald-500', 'border-indigo-500');
+                    iconContainer.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>'; btnText.textContent = 'ติดตามพิกัด'; locationDataBox.classList.add('hidden');
+                } else {
+                    isTracking = true;
+                    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                        DeviceOrientationEvent.requestPermission().then(permissionState => { if (permissionState === 'granted') { window.addEventListener('deviceorientation', handleOrientation); } }).catch(console.error);
+                    } else { window.addEventListener('deviceorientationabsolute', handleOrientation); window.addEventListener('deviceorientation', handleOrientation); }
+                    trackBtn.classList.replace('bg-indigo-600', 'bg-emerald-600'); trackBtn.classList.replace('shadow-indigo-600/30', 'shadow-emerald-600/30'); trackBtn.classList.replace('border-indigo-500', 'border-emerald-500');
+                    iconContainer.innerHTML = '<svg class="w-8 h-8 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>'; btnText.textContent = 'กำลังค้นหา...'; locationDataBox.classList.remove('hidden');
+                    watchId = navigator.geolocation.watchPosition(
+                        (pos) => {
+                            currentPosition = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                            iconContainer.innerHTML = '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'; btnText.textContent = 'กำลังติดตาม';
+                            document.getElementById('currentCoords').textContent = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`; document.getElementById('accVal').textContent = `±${pos.coords.accuracy.toFixed(0)} m`;
+                            if (userMarker) { userMarker.setLatLng(currentPosition); accuracyCircle.setLatLng(currentPosition).setRadius(pos.coords.accuracy); } 
+                            else { userMarker = L.marker(currentPosition, {icon: userLocationIcon}).addTo(map); accuracyCircle = L.circle(currentPosition, { radius: pos.coords.accuracy, color: '#10b981', fillOpacity: 0.15, weight: 2 }).addTo(map); map.setView(currentPosition, 18); }
+                            updateNavigation();
+                        }, (err) => { alert('ไม่สามารถดึงข้อมูลพิกัดได้'); trackBtn.click(); }, { enableHighAccuracy: true }
+                    );
+                }
+            });
+
+            function renderMapMarkers() { markersLayer.clearLayers(); foundations.forEach(f => { if (activeTargetId && f.id !== activeTargetId) return; L.marker([f.lat, f.lng], { icon: f.id === activeTargetId ? redIcon : blueIcon }).bindPopup(`<div class="px-2 py-1"><b class="text-sm font-black text-slate-800">${f.name}</b></div>`).addTo(markersLayer); }); }
+            
+            window.setTarget = (id) => { activeTargetId = id; document.getElementById('navStatus').classList.remove('hidden'); document.getElementById('navTargetName').textContent = foundations.find(f => f.id === id).name; if (systemContainer.classList.contains('hidden')) { toggleBtn.click(); } renderMapMarkers(); updateNavigation(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+            document.getElementById('stopNavBtn').addEventListener('click', () => { activeTargetId = null; document.getElementById('navStatus').classList.add('hidden'); if (routingLine) map.removeLayer(routingLine); renderMapMarkers(); renderList(); });
+            document.getElementById('backToWhereAmIBtn').addEventListener('click', () => { document.getElementById('stopNavBtn').click(); document.getElementById('whereAmIBtn').click(); });
+
+            function updateNavigation() { if (!currentPosition || !activeTargetId) return; const target = foundations.find(f => f.id === activeTargetId); const dist = currentPosition.distanceTo(L.latLng(target.lat, target.lng)); document.getElementById('navDistance').textContent = dist.toFixed(1) + 'm'; if (routingLine) map.removeLayer(routingLine); routingLine = L.polyline([currentPosition, L.latLng(target.lat, target.lng)], {color: '#f97316', weight: 4, dashArray: '6, 8'}).addTo(map); renderList(); }
+            
+            function renderList() {
+                const list = document.getElementById('foundationList'); 
+                if (foundations.length === 0) { list.innerHTML = '<div class="flex flex-col items-center justify-center py-16 text-center bg-white rounded-3xl border border-dashed border-slate-300"><p class="text-slate-500 font-medium">ยังไม่มีข้อมูลฐานราก</p></div>'; return; }
+                list.innerHTML = ''; let sorted = [...foundations]; 
+                if (currentPosition) sorted.sort((a, b) => currentPosition.distanceTo(L.latLng(a.lat, a.lng)) - currentPosition.distanceTo(L.latLng(b.lat, b.lng)));
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput && searchInput.value) { const term = searchInput.value.toLowerCase().trim(); sorted = sorted.filter(f => f.name.toLowerCase().includes(term)); }
+                if (sorted.length === 0) { list.innerHTML = '<div class="text-center py-10 bg-white rounded-3xl border border-dashed border-slate-300"><p class="text-slate-500 font-medium">ไม่พบพิกัดที่ค้นหา</p></div>'; return; }
+                
+                sorted.forEach(f => {
+                    const dist = currentPosition ? currentPosition.distanceTo(L.latLng(f.lat, f.lng)) : null; const item = document.createElement('div');
+                    item.className = `bg-white p-4 rounded-2xl border transition-all relative overflow-hidden ${f.id === activeTargetId ? 'border-indigo-500 shadow-md ring-1 ring-indigo-500' : 'border-slate-200 shadow-sm'}`;
+                    item.innerHTML = `
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 relative">${f.image ? `<img src="${f.image}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-xl border border-slate-200 cursor-pointer active:scale-95 transition-transform" onclick="document.getElementById('fullPhotoView').src='${f.image}'; document.getElementById('photoModal').classList.remove('hidden');">` : `<div class="w-16 h-16 md:w-20 md:h-20 bg-slate-50 rounded-xl border border-slate-200 flex flex-col items-center justify-center text-slate-400">NO IMG</div>`}</div>
+                            <div class="ml-4 overflow-hidden w-full pt-1">
+                                <div class="flex justify-between items-start"><h4 class="font-black text-slate-800 text-lg leading-none truncate">${f.name}</h4>${dist !== null ? `<span class="bg-slate-100 text-slate-700 text-xs font-bold px-2 py-1 rounded-md whitespace-nowrap">${dist.toFixed(0)}m</span>` : ''}</div>
+                                <p class="text-[11px] text-slate-400 font-mono mt-1">${f.lat.toFixed(6)}, ${f.lng.toFixed(6)}</p>
+                                <div class="flex gap-2 mt-3">
+                                    <button onclick="window.setTarget('${f.id}')" class="action-button flex-1 bg-indigo-50 text-indigo-700 py-1.5 rounded-lg text-xs font-bold border border-indigo-100">นำทาง</button>
+                                    <button onclick="window.editData('${f.id}')" class="action-button flex-1 bg-slate-50 text-slate-600 py-1.5 rounded-lg text-xs font-bold border border-slate-200">แก้ไข</button>
+                                    <button onclick="window.deleteData('${f.id}')" class="action-button w-10 flex-shrink-0 bg-red-50 text-red-500 py-1.5 rounded-lg flex justify-center items-center border border-red-100"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                </div>
+                            </div>
+                        </div>`;
+                    list.appendChild(item);
+                });
+            }
+
+            const modal = document.getElementById('formModal');
+            document.getElementById('openAddModalBtn').addEventListener('click', () => { document.getElementById('formId').value = ''; document.getElementById('formName').value = ''; document.getElementById('formImage').value = ''; document.getElementById('imagePreviewContainer').classList.add('hidden'); document.getElementById('formImageDataUrl').value = ''; if (currentPosition) { document.getElementById('formLat').value = currentPosition.lat.toFixed(6); document.getElementById('formLng').value = currentPosition.lng.toFixed(6); } modal.classList.remove('hidden'); });
+            document.getElementById('useCurrentLocationBtn').addEventListener('click', function() { if(currentPosition) { document.getElementById('formLat').value = currentPosition.lat.toFixed(6); document.getElementById('formLng').value = currentPosition.lng.toFixed(6); } else { const origHtml = this.innerHTML; this.innerHTML = 'รอสักครู่...'; navigator.geolocation.getCurrentPosition((pos) => { document.getElementById('formLat').value = pos.coords.latitude.toFixed(6); document.getElementById('formLng').value = pos.coords.longitude.toFixed(6); this.innerHTML = origHtml; }, null, {enableHighAccuracy: true}); } });
+            document.getElementById('cancelBtn').addEventListener('click', () => modal.classList.add('hidden'));
+            document.getElementById('formImage').addEventListener('change', function(e) { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { const canvas = document.createElement('canvas'); const MAX = 600; let w = img.width, h = img.height; if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } else { if (h > MAX) { w *= MAX / h; h = MAX; } } canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h); const dataUrl = canvas.toDataURL('image/jpeg', 0.6); document.getElementById('formImageDataUrl').value = dataUrl; document.getElementById('imagePreview').src = dataUrl; document.getElementById('imagePreviewContainer').classList.remove('hidden'); }; img.src = event.target.result; }; reader.readAsDataURL(file); });
+            document.getElementById('removeImgBtn').addEventListener('click', () => { document.getElementById('formImage').value = ''; document.getElementById('formImageDataUrl').value = ''; document.getElementById('imagePreviewContainer').classList.add('hidden'); });
+            document.getElementById('saveBtn').addEventListener('click', async () => {
+                const id = document.getElementById('formId').value || Date.now().toString(); const data = { id, name: document.getElementById('formName').value.trim(), lat: parseFloat(document.getElementById('formLat').value), lng: parseFloat(document.getElementById('formLng').value), image: document.getElementById('formImageDataUrl').value };
+                if (!data.name || isNaN(data.lat)) return alert('กรุณาระบุชื่อจุดและพิกัดให้ครบถ้วน');
+                const idx = foundations.findIndex(f => f.id === id); if (idx >= 0) foundations[idx] = data; else foundations.push(data);
+                localStorage.setItem('bridge_foundations', JSON.stringify(foundations)); modal.classList.add('hidden'); renderMapMarkers(); renderList();
+                if (!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes("วาง_URL")) return; 
+                const loadModal = document.getElementById('loadingModal'); document.getElementById('loadingText').textContent = 'กำลังอัปโหลด...'; loadModal.classList.remove('hidden');
+                try { await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); loadModal.classList.add('hidden'); } catch (error) { loadModal.classList.add('hidden'); alert('ซิงค์ขึ้น Cloud ไม่สำเร็จ ข้อมูลถูกเซฟไว้ในเครื่องแล้วครับ'); }
+            });
+            window.editData = (id) => { const t = foundations.find(f => f.id === id); document.getElementById('formId').value = t.id; document.getElementById('formName').value = t.name; document.getElementById('formLat').value = t.lat; document.getElementById('formLng').value = t.lng; document.getElementById('formImageDataUrl').value = t.image || ''; if (t.image) { document.getElementById('imagePreview').src = t.image; document.getElementById('imagePreviewContainer').classList.remove('hidden'); } modal.classList.remove('hidden'); };
+            
+            // -------------------------------------------------------------
+            // ระบบป้องกันการลบข้อมูล (v3.9)
+            // -------------------------------------------------------------
+            window.deleteData = (id) => { 
+                const pin = prompt('🔒 ระบบป้องกันความปลอดภัย\\nกรุณากรอกรหัสผ่านเพื่อลบข้อมูล:');
+                
+                if (pin === null) return; // กรณีผู้ใช้กดยกเลิก
+                
+                // สามารถเปลี่ยนรหัสผ่าน 1234 เป็นตัวเลขที่คุณต้องการได้ที่บรรทัดนี้ครับ
+                if (pin === '2525') { 
+                    if (confirm('คุณแน่ใจหรือไม่ที่จะลบจุดพิกัดนี้อย่างถาวร?')) { 
+                        foundations = foundations.filter(f => f.id !== id); 
+                        localStorage.setItem('bridge_foundations', JSON.stringify(foundations)); 
+                        if(activeTargetId === id) document.getElementById('stopNavBtn').click();
+                        renderMapMarkers(); 
+                        renderList(); 
+                    } 
+                } else {
+                    alert('❌ รหัสผ่านไม่ถูกต้อง! ยกเลิกการลบข้อมูล');
+                }
+            };
+            // -------------------------------------------------------------
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered successfully'))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
